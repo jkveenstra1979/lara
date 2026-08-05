@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="nl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LARA Areas — mockup</title>
+<style>
+/* ============================================================================
+   Ontwerptokens — LARA Areas
+   Structuur overgenomen van AIP Check (radius 0, geen schaduwen, hairlines,
+   één interactiekleur). Accent is indigo in plaats van teal, zodat de twee
+   tools op een tweede beeldscherm niet te verwarren zijn.
+   ========================================================================= */
+:root {
+  color-scheme: light dark;
+
+  --bg: #f2f3f4;
+  --surface: #ffffff;
+  --surface-sub: #f7f8f8;
+  --rail: #ecedef;
+
+  --rule: #dcdfe1;
+  --rule-soft: #e7e9ea;
+  --rule-strong: #b6bcbf;
+  --rule-mid: #cfd4d6;
+
+  --ink: #14171a;
+  --ink-2: #5a6367;
+  --ink-3: #63696d;
+
+  /* de enige interactiekleur */
+  --action: #3f3d8f;
+  --action-wash: #f4f4fa;
+  --action-hl: #dedcf0;
+
+  /* statussen */
+  --ok: #1f6b3f;
+  --ok-wash: #eff4f1;
+  --warn: #8a5a00;
+  --warn-wash: #f6f2ea;
+  --fout: #a1231f;
+  --fout-wash: #f7eeee;
+
+  --sans: ui-sans-serif, -apple-system, "IBM Plex Sans", "Segoe UI", sans-serif;
+  --mono: ui-monospace, "IBM Plex Mono", "SF Mono", Consolas, monospace;
+
+  --rail-w: 216px;
+  --sessionbar-h: 54px;
+  --stepbar-h: 46px;
+  --footbar-h: 32px;
+  --field-h: 34px;
+  --button-h: 36px;
+  --step-num: 19px;
+
+  --map-land: #e9eaec;
+  --map-water: #dfe4e8;
+  --map-line: #c8ccd0;
+}
+
+:root[data-theme="dark"] {
+  --bg: #14181a;
+  --surface: #1b2022;
+  --surface-sub: #171d1f;
+  --rail: #111617;
+  --rule: #2b3234;
+  --rule-soft: #232a2c;
+  --rule-mid: #333b3d;
+  --rule-strong: #3b4446;
+  --ink: #e6e9ea;
+  --ink-2: #9aa4a7;
+  --ink-3: #8b969a;
+  --action: #8b88e0;
+  --action-wash: #1c1b2e;
+  --action-hl: #343160;
+  --ok: #4f9e6f;
+  --ok-wash: #182220;
+  --warn: #c39a4a;
+  --warn-wash: #221e18;
+  --fout: #d1706c;
+  --fout-wash: #221819;
+  --map-land: #232a2c;
+  --map-water: #1c2426;
+  --map-line: #333b3d;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--sans); font-size: 13px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--action); outline-offset: 1px; }
+
+h1 { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
+h2 { font-size: 15px; font-weight: 600; }
+
+.lead { font-size: 13px; color: var(--ink-2); max-width: 80ch; }
+.sectionLabel {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 600;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3);
+  white-space: nowrap;
+}
+.mono { font-family: var(--mono); font-size: 12px; color: var(--ink-2); }
+.meta { font-family: var(--mono); font-size: 10.5px; line-height: 1.7; color: var(--ink-3); }
+.rule { flex: 1; height: 1px; background: var(--rule); }
+.sectionHead { display: flex; align-items: center; gap: 12px; }
+.spacer { flex: 1; }
+a { color: var(--action); text-decoration: underline; text-underline-offset: 2px; }
+
+/* ------------------------------------------------------------------ shell -- */
+.app { display: flex; height: 100vh; overflow: hidden; }
+
+.rail {
+  width: var(--rail-w); flex-shrink: 0; background: var(--rail);
+  border-right: 1px solid var(--rule); display: flex; flex-direction: column;
+  padding: 18px 0;
+}
+.brand { padding: 0 16px 18px; }
+.wordmark { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.wordmark em { font-style: normal; color: var(--action); }
+.tagline { display: block; font-family: var(--mono); font-size: 10px; color: var(--ink-3); margin-top: 3px; }
+.group { display: flex; flex-direction: column; padding: 0 8px; margin-bottom: 16px; }
+.groupLabel { padding: 0 8px 6px; }
+.item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 8px; font-size: 12.5px; color: var(--ink-2);
+  text-decoration: none; cursor: pointer; border: none; background: none;
+  font-family: var(--sans); text-align: left; width: 100%;
+}
+.item:hover { color: var(--ink); }
+.itemActive { color: var(--ink); font-weight: 600; background: var(--surface); box-shadow: inset 2px 0 0 var(--action); }
+.count { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
+.railFoot { padding: 0 16px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.userName { display: block; font-size: 12px; }
+.userRole { display: block; font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+.sessionBar {
+  display: flex; align-items: center; gap: 12px; height: var(--sessionbar-h);
+  padding: 0 28px; background: var(--surface); border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+.project { font-size: 13px; font-weight: 600; }
+.divider { width: 1px; height: 20px; background: var(--rule); }
+.position { font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); }
+
+.stepBar {
+  display: flex; align-items: center; height: var(--stepbar-h); padding: 0 28px;
+  background: var(--surface-sub); border-bottom: 1px solid var(--rule); flex-shrink: 0;
+}
+.stepWrap { display: flex; align-items: center; gap: 16px; flex: 1; }
+.stepWrap:last-child { flex: 0; }
+.step {
+  display: flex; align-items: center; gap: 10px; white-space: nowrap;
+  background: none; border: none; font-family: var(--sans); cursor: pointer; padding: 0;
+}
+.stepNum {
+  display: flex; align-items: center; justify-content: center;
+  width: var(--step-num); height: var(--step-num); border: 1px solid var(--rule-strong);
+  font-family: var(--mono); font-size: 11px; color: var(--ink-3); flex-shrink: 0;
+}
+.stepNumOn { background: var(--ink); border-color: var(--ink); color: var(--surface); font-weight: 600; }
+.stepLabel { font-size: 12.5px; color: var(--ink-3); }
+.stepLabelOn { font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.stepRule { flex: 1; height: 1px; background: var(--rule); }
+
+.work { flex: 1; padding: 26px 28px; display: flex; flex-direction: column; gap: 22px; overflow-y: auto; }
+.workFlush { flex: 1; display: flex; min-height: 0; }
+
+.footBar {
+  display: flex; align-items: center; gap: 16px; height: var(--footbar-h);
+  padding: 0 28px; background: var(--surface); border-top: 1px solid var(--rule); flex-shrink: 0;
+}
+.keys { display: flex; gap: 16px; }
+.key { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
+.keyCap { color: var(--ink-2); font-weight: 600; }
+
+/* ------------------------------------------------------------- primitieven -- */
+button.btn {
+  height: var(--button-h); padding: 0 14px; font-family: var(--sans); font-size: 12.5px;
+  border: 1px solid var(--rule-strong); background: var(--surface); color: var(--ink);
+  cursor: pointer;
+}
+button.btn:hover { border-color: var(--ink); }
+button.btnPrimary { background: var(--action); border-color: var(--action); color: #fff; font-weight: 500; }
+button.btnPrimary:hover { filter: brightness(1.12); }
+button.btnSmall { height: 26px; padding: 0 9px; font-size: 11.5px; }
+button.btn:disabled { color: var(--ink-3); border-color: var(--rule-mid); background: var(--surface-sub); cursor: not-allowed; }
+
+input[type="text"], input[type="number"], input[type="search"], select {
+  width: 100%; height: var(--field-h); padding: 0 10px;
+  border: 1px solid var(--rule-strong); background: var(--surface); color: var(--ink);
+  font-family: var(--sans); font-size: 12.5px;
+}
+input:focus, select:focus { border-color: var(--ink); outline: none; }
+input.monoField { font-family: var(--mono); }
+label.field { display: block; font-size: 11.5px; color: var(--ink-2); margin-bottom: 5px; }
+
+.badge {
+  display: inline-flex; align-items: center; height: 18px; padding: 0 6px;
+  font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; border: 1px solid currentColor;
+}
+.badgeOk { color: var(--ok); background: var(--ok-wash); }
+.badgeWarn { color: var(--warn); background: var(--warn-wash); }
+.badgeFout { color: var(--fout); background: var(--fout-wash); }
+.badgeQuiet { color: var(--ink-3); background: var(--surface-sub); }
+
+table { width: 100%; border-collapse: collapse; background: var(--surface); }
+thead th {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-3); text-align: left; padding: 8px 12px;
+  background: var(--surface-sub); border-bottom: 1px solid var(--rule); white-space: nowrap;
+  position: sticky; top: 0; z-index: 1;
+}
+tbody td { padding: 7px 12px; font-size: 12.5px; border-bottom: 1px solid var(--rule-soft); vertical-align: middle; }
+tbody tr[data-selected="true"] { background: var(--action-wash); box-shadow: inset 2px 0 0 var(--action); }
+tbody tr:hover { background: var(--surface-sub); }
+tbody tr[data-selected="true"]:hover { background: var(--action-wash); }
+.numeric { text-align: right; font-family: var(--mono); }
+td.ident { font-family: var(--mono); font-weight: 600; font-size: 12px; }
+td.dim { color: var(--ink-3); }
+.laraId { font-family: var(--mono); font-weight: 600; }
+.laraNone { color: var(--rule-strong); }
+
+/* --------------------------------------------------------------- schermen -- */
+.screen { display: none; }
+.screen[data-on="true"] { display: contents; }
+
+/* scherm 1 — upload */
+.drop {
+  border: 1px dashed var(--rule-strong); background: var(--surface);
+  padding: 44px 28px; text-align: center;
+}
+.drop strong { display: block; font-size: 14px; margin-bottom: 4px; }
+.dropHint { color: var(--ink-2); font-size: 12.5px; margin-bottom: 18px; }
+.progressTrack { height: 6px; background: var(--rule-soft); }
+.progressFill { height: 100%; background: var(--action); }
+.resultGrid { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--rule); background: var(--surface); }
+.resultCell { padding: 14px 16px; border-right: 1px solid var(--rule); }
+.resultCell:last-child { border-right: none; }
+.resultNum { font-family: var(--mono); font-size: 22px; font-weight: 600; line-height: 1.1; }
+.resultNum.warnNum { color: var(--warn); }
+.resultLabel { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin-top: 4px; }
+.noteBar { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; background: var(--warn-wash); border: 1px solid var(--warn); color: var(--warn); font-size: 12.5px; }
+
+/* scherm 2 — gebieden */
+.split { display: flex; flex: 1; min-height: 0; }
+.listPane { flex: 1; min-width: 0; display: flex; flex-direction: column; border-right: 1px solid var(--rule); }
+.filterBar {
+  display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+  background: var(--surface); border-bottom: 1px solid var(--rule); flex-shrink: 0;
+}
+.filterBar input[type="search"] { max-width: 260px; height: 30px; }
+.filterBar select { width: auto; height: 30px; padding-right: 26px; }
+.chk { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); white-space: nowrap; cursor: pointer; }
+.tableScroll { flex: 1; overflow-y: auto; }
+.idCell { display: flex; align-items: center; gap: 6px; }
+.idInput { width: 58px; height: 24px; padding: 0 6px; font-family: var(--mono); font-size: 12px; text-align: right; }
+.idInputErr { border-color: var(--fout); }
+.rowErr { font-size: 10.5px; color: var(--fout); font-family: var(--mono); }
+
+.detailPane { width: 460px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--surface); }
+.detailHead { padding: 14px 18px; border-bottom: 1px solid var(--rule); }
+.detailIdent { font-family: var(--mono); font-size: 15px; font-weight: 600; }
+.detailName { color: var(--ink-2); font-size: 12.5px; }
+.detailFacts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 18px; margin-top: 12px; }
+.fact { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid var(--rule-soft); }
+.factKey { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
+.factVal { font-size: 12px; font-family: var(--mono); }
+.tabs { display: flex; border-bottom: 1px solid var(--rule); background: var(--surface-sub); flex-shrink: 0; }
+.tab {
+  padding: 9px 16px; font-size: 12px; color: var(--ink-3); background: none; border: none;
+  border-bottom: 2px solid transparent; cursor: pointer; font-family: var(--sans);
+}
+.tab:hover { color: var(--ink); }
+.tabOn { color: var(--ink); font-weight: 600; border-bottom-color: var(--action); background: var(--surface); }
+.tabBody { flex: 1; overflow: auto; min-height: 0; }
+.tabPane { display: none; height: 100%; }
+.tabPane[data-on="true"] { display: block; }
+.mapBox { height: 100%; background: var(--map-water); position: relative; }
+.mapMeta {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 6px 12px;
+  background: var(--surface); border-top: 1px solid var(--rule);
+  font-family: var(--mono); font-size: 10.5px; color: var(--ink-3);
+  display: flex; gap: 14px;
+}
+.coordList { font-family: var(--mono); font-size: 11.5px; line-height: 1.9; padding: 14px 18px; }
+.coordList li { list-style: none; display: flex; gap: 14px; }
+.coordIdx { color: var(--ink-3); width: 26px; text-align: right; flex-shrink: 0; }
+.coordNote { padding: 10px 18px; background: var(--action-wash); border-bottom: 1px solid var(--rule); font-size: 11.5px; color: var(--ink-2); }
+pre.xml {
+  font-family: var(--mono); font-size: 11px; line-height: 1.65; padding: 14px 18px;
+  white-space: pre; color: var(--ink-2); tab-size: 2;
+}
+.xml .t { color: var(--action); }
+.xml .a { color: var(--ink-3); }
+.xml .v { color: var(--ok); }
+.detailFoot { display: flex; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--rule); flex-shrink: 0; }
+
+/* scherm 3 — export */
+.exportGrid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; align-items: start; }
+.panel { border: 1px solid var(--rule); background: var(--surface); }
+.panelHead { padding: 11px 16px; border-bottom: 1px solid var(--rule); background: var(--surface-sub); display: flex; align-items: center; gap: 10px; }
+.panelBody { padding: 16px; }
+.checkRow { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--rule-soft); font-size: 12.5px; }
+.checkRow:last-child { border-bottom: none; }
+.checkMark { font-family: var(--mono); font-weight: 600; flex-shrink: 0; width: 14px; }
+.sheetList { font-family: var(--mono); font-size: 11.5px; }
+.sheetRow { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--rule-soft); }
+.sheetRow:last-child { border-bottom: none; }
+.sheetRow span:last-child { color: var(--ink-3); }
+.exportActions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.themeToggle {
+  height: 26px; padding: 0 10px; font-family: var(--mono); font-size: 10.5px;
+  border: 1px solid var(--rule-strong); background: var(--surface); color: var(--ink-2); cursor: pointer;
+}
+.mockNote {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-3); border: 1px solid var(--rule-mid); padding: 2px 7px;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ================================================================ rail -->
+  <nav class="rail" aria-label="Hoofdnavigatie">
+    <div class="brand">
+      <span class="wordmark">LARA<em>·</em>Areas</span>
+      <span class="tagline">AIXM → LARA V4</span>
+    </div>
+
+    <div class="group">
+      <span class="sectionLabel groupLabel">Werkstroom</span>
+      <button class="item" data-goto="1">Importeren</button>
+      <button class="item itemActive" data-goto="2">Gebieden<span class="count">187</span></button>
+      <button class="item" data-goto="3">Exporteren<span class="count">42</span></button>
+    </div>
+
+    <div class="group">
+      <span class="sectionLabel groupLabel">Datasets</span>
+      <a class="item" href="#">EHAA_AIXM51_2608.xml<span class="count">187</span></a>
+      <a class="item" href="#">EHAA_AIXM51_2607.xml<span class="count">185</span></a>
+      <a class="item" href="#" style="color:var(--ink-3)">Nieuwe upload…</a>
+    </div>
+
+    <div class="group">
+      <span class="sectionLabel groupLabel">Beheer</span>
+      <a class="item" href="#">Geoborders<span class="count">14</span></a>
+      <a class="item" href="#">Gebruikers<span class="count">3</span></a>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="railFoot">
+      <button class="themeToggle" id="themeBtn">◐ donker</button>
+      <div style="margin-top:10px">
+        <span class="userName">jk@projectus.nl</span>
+        <span class="userRole">beheerder</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ================================================================ main -->
+  <div class="main">
+
+    <header class="sessionBar">
+      <span class="sectionLabel">Dataset</span>
+      <span class="project">EHAA_AIXM51_2608.xml <span style="color:var(--ink-3);font-size:11px">▾</span></span>
+      <span class="divider"></span>
+      <span class="position">AIRAC 2608 · geïmporteerd 05-08-2026 09:14</span>
+      <div class="spacer"></div>
+      <span class="mockNote">mockup</span>
+      <span class="badge badgeOk" id="sessBadge">42 van 187 genummerd</span>
+    </header>
+
+    <nav class="stepBar" aria-label="Werkstroom">
+      <div class="stepWrap">
+        <button class="step" data-goto="1"><span class="stepNum" data-num="1">1</span><span class="stepLabel" data-lab="1">Importeren</span></button>
+        <span class="stepRule"></span>
+      </div>
+      <div class="stepWrap">
+        <button class="step" data-goto="2"><span class="stepNum" data-num="2">2</span><span class="stepLabel" data-lab="2">Gebieden &amp; LARA ID</span></button>
+        <span class="stepRule"></span>
+      </div>
+      <div class="stepWrap">
+        <button class="step" data-goto="3"><span class="stepNum" data-num="3">3</span><span class="stepLabel" data-lab="3">Exporteren</span></button>
+      </div>
+    </nav>
+
+    <!-- ======================================================= scherm 1 -->
+    <div class="screen" data-screen="1">
+      <div class="work">
+
+        <section>
+          <div class="sectionHead">
+            <span class="sectionLabel">01 · AIXM-bestand</span>
+            <span class="rule"></span>
+            <span class="meta">AIXM 5.1 · .xml · max 200 MB</span>
+          </div>
+          <div style="padding-top:14px">
+            <div class="drop">
+              <strong>Sleep het AIXM-bestand hierheen</strong>
+              <div class="dropHint">of <a href="#">kies een bestand</a> — het bestand wordt bewaard zodat de import later herhaald kan worden</div>
+              <button class="btn btnPrimary">Bestand kiezen</button>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="sectionHead">
+            <span class="sectionLabel">02 · Verwerking</span>
+            <span class="rule"></span>
+            <span class="meta">EHAA_AIXM51_2608.xml · 48,2 MB · 11,4 s</span>
+          </div>
+          <div style="padding-top:14px;display:flex;flex-direction:column;gap:14px">
+            <div class="progressTrack"><div class="progressFill" style="width:100%"></div></div>
+            <div class="resultGrid">
+              <div class="resultCell"><div class="resultNum">187</div><div class="resultLabel">Airspaces</div></div>
+              <div class="resultCell"><div class="resultNum">174</div><div class="resultLabel">Met geometrie</div></div>
+              <div class="resultCell"><div class="resultNum warnNum">13</div><div class="resultLabel">Onopgelost</div></div>
+              <div class="resultCell"><div class="resultNum">14</div><div class="resultLabel">Geoborders</div></div>
+            </div>
+            <div class="noteBar">
+              <span style="font-family:var(--mono);font-weight:600">!</span>
+              <span>
+                13 gebieden verwijzen naar een landsgrens die niet in dit bestand staat. Ze krijgen geen coördinaten in de
+                LARA-export tot de bijbehorende geoborder is geladen. <a href="#">Toon de 13 gebieden</a> ·
+                <a href="#">Geoborders uploaden</a>
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="sectionHead">
+            <span class="sectionLabel">03 · Eerdere imports</span>
+            <span class="rule"></span>
+          </div>
+          <div style="padding-top:14px;border:1px solid var(--rule)">
+            <table>
+              <thead><tr><th>Bestand</th><th>AIRAC</th><th>Geïmporteerd</th><th class="numeric">Airspaces</th><th class="numeric">LARA IDs</th><th></th></tr></thead>
+              <tbody>
+                <tr data-selected="true"><td class="ident">EHAA_AIXM51_2608.xml</td><td>2608</td><td class="dim">05-08-2026 09:14</td><td class="numeric">187</td><td class="numeric">42</td><td><span class="badge badgeOk">actief</span></td></tr>
+                <tr><td class="ident">EHAA_AIXM51_2607.xml</td><td>2607</td><td class="dim">08-07-2026 11:02</td><td class="numeric">185</td><td class="numeric">42</td><td><button class="btn btnSmall">Activeren</button></td></tr>
+                <tr><td class="ident">EHAA_AIXM51_2606.xml</td><td>2606</td><td class="dim">10-06-2026 08:47</td><td class="numeric">185</td><td class="numeric">40</td><td><button class="btn btnSmall">Activeren</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- ======================================================= scherm 2 -->
+    <div class="screen" data-screen="2">
+      <div class="workFlush">
+        <div class="split">
+
+          <!-- lijst -->
+          <div class="listPane">
+            <div class="filterBar">
+              <input type="search" placeholder="Designator of naam…" value="">
+              <select><option>Alle types</option><option>R — Restricted</option><option>D — Danger</option><option>TRA</option><option>TSA</option><option>CTR</option></select>
+              <select><option>Alle klassen</option><option>C</option><option>D</option><option>E</option><option>G</option></select>
+              <label class="chk"><input type="checkbox" checked style="width:auto;height:auto"> Alleen met LARA ID</label>
+              <div class="spacer"></div>
+              <button class="btn btnSmall">Lijst plakken…</button>
+              <button class="btn btnSmall">Hernummeren</button>
+            </div>
+
+            <div class="tableScroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:96px">LARA ID ⇅</th>
+                    <th style="width:104px">Designator</th>
+                    <th>Naam</th>
+                    <th style="width:56px">Type</th>
+                    <th style="width:56px">Class</th>
+                    <th style="width:78px">Onder</th>
+                    <th style="width:78px">Boven</th>
+                    <th style="width:92px">Geometrie</th>
+                  </tr>
+                </thead>
+                <tbody id="rows">
+                  <!-- gevuld door script -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- detail -->
+          <aside class="detailPane">
+            <div class="detailHead">
+              <div style="display:flex;align-items:baseline;gap:10px">
+                <span class="detailIdent">EHR4A</span>
+                <span class="badge badgeOk">LARA 3</span>
+                <div class="spacer"></div>
+                <span class="meta">3 / 187</span>
+              </div>
+              <div class="detailName">Amsterdam Terminal Area — restricted area Volkel</div>
+
+              <div class="detailFacts">
+                <div class="fact"><span class="factKey">Type</span><span class="factVal">R</span></div>
+                <div class="fact"><span class="factKey">Class</span><span class="factVal">—</span></div>
+                <div class="fact"><span class="factKey">Onder</span><span class="factVal">GND</span></div>
+                <div class="fact"><span class="factKey">Boven</span><span class="factVal">FL 065</span></div>
+                <div class="fact"><span class="factKey">Volume</span><span class="factVal">Straight Lines</span></div>
+                <div class="fact"><span class="factKey">Punten</span><span class="factVal">28</span></div>
+              </div>
+            </div>
+
+            <div class="tabs">
+              <button class="tab tabOn" data-tab="kaart">Kaart</button>
+              <button class="tab" data-tab="coord">Coördinaten</button>
+              <button class="tab" data-tab="aixm">AIXM</button>
+            </div>
+
+            <div class="tabBody">
+
+              <div class="tabPane" data-pane="kaart" data-on="true">
+                <div class="mapBox">
+                  <svg width="100%" height="100%" viewBox="0 0 460 420" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Kaartweergave van het gebied">
+                    <rect width="460" height="420" fill="var(--map-water)"/>
+                    <path d="M40 60 L200 30 L330 70 L420 140 L400 300 L280 390 L120 370 L30 250 Z" fill="var(--map-land)" stroke="var(--map-line)" stroke-width="1"/>
+                    <g stroke="var(--map-line)" stroke-width="0.5" opacity="0.7">
+                      <line x1="0" y1="105" x2="460" y2="105"/><line x1="0" y1="210" x2="460" y2="210"/><line x1="0" y1="315" x2="460" y2="315"/>
+                      <line x1="115" y1="0" x2="115" y2="420"/><line x1="230" y1="0" x2="230" y2="420"/><line x1="345" y1="0" x2="345" y2="420"/>
+                    </g>
+                    <polygon points="150,150 240,120 300,160 315,235 265,290 180,285 140,225"
+                             fill="var(--action)" fill-opacity="0.14" stroke="var(--action)" stroke-width="1.6"/>
+                    <g fill="var(--action)">
+                      <circle cx="150" cy="150" r="2.6"/><circle cx="240" cy="120" r="2.6"/><circle cx="300" cy="160" r="2.6"/>
+                      <circle cx="315" cy="235" r="2.6"/><circle cx="265" cy="290" r="2.6"/><circle cx="180" cy="285" r="2.6"/>
+                      <circle cx="140" cy="225" r="2.6"/>
+                    </g>
+                    <text x="228" y="212" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" font-weight="600" fill="var(--action)">EHR4A</text>
+                  </svg>
+                  <div class="mapMeta">
+                    <span>52°15′38″N 005°42′11″E</span>
+                    <span>bbox 5.31 / 51.98 → 6.12 / 52.53</span>
+                    <div class="spacer"></div>
+                    <span>OSM · MapLibre</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="tabPane" data-pane="coord">
+                <div class="coordNote">
+                  Precies de reeks die in kolom <span class="mono">Coordinates</span> van sheet <span class="mono">Area Volumes</span> terechtkomt. Bogen zijn geïnterpoleerd; het eerste punt wordt aan het eind herhaald.
+                </div>
+                <ul class="coordList">
+                  <li><span class="coordIdx">1</span><span>52°31′48″N,005°18′55″E</span></li>
+                  <li><span class="coordIdx">2</span><span>52°30′12″N,005°34′02″E</span></li>
+                  <li><span class="coordIdx">3</span><span>52°26′41″N,005°48′30″E</span></li>
+                  <li><span class="coordIdx">4</span><span>52°21′09″N,005°55′17″E</span></li>
+                  <li><span class="coordIdx">5</span><span>52°16′33″N,006°01′44″E</span></li>
+                  <li><span class="coordIdx">6</span><span>52°11′58″N,005°58′21″E</span></li>
+                  <li><span class="coordIdx">7</span><span>52°07′14″N,005°49′06″E</span></li>
+                  <li><span class="coordIdx">8</span><span>52°04′52″N,005°37′48″E</span></li>
+                  <li><span class="coordIdx">9</span><span>52°06′31″N,005°25′13″E</span></li>
+                  <li><span class="coordIdx">…</span><span style="color:var(--ink-3)">18 punten verborgen</span></li>
+                  <li><span class="coordIdx">28</span><span>52°31′48″N,005°18′55″E</span></li>
+                </ul>
+              </div>
+
+              <div class="tabPane" data-pane="aixm">
+<pre class="xml">&lt;<span class="t">aixm:Airspace</span> <span class="a">gml:id</span>=<span class="v">"uuid.8f2c1a4e-…"</span>&gt;
+  &lt;<span class="t">gml:identifier</span> <span class="a">codeSpace</span>=<span class="v">"urn:uuid:"</span>&gt;
+    8f2c1a4e-3b77-4d2a-9e51-c07f18ab2d64
+  &lt;/<span class="t">gml:identifier</span>&gt;
+  &lt;<span class="t">aixm:timeSlice</span>&gt;
+    &lt;<span class="t">aixm:AirspaceTimeSlice</span> <span class="a">gml:id</span>=<span class="v">"ATS_0431"</span>&gt;
+      &lt;<span class="t">gml:validTime</span>&gt;
+        &lt;<span class="t">gml:TimePeriod</span>&gt;
+          &lt;<span class="t">gml:beginPosition</span>&gt;2026-08-06T00:00:00Z&lt;/<span class="t">gml:beginPosition</span>&gt;
+          &lt;<span class="t">gml:endPosition</span> <span class="a">indeterminatePosition</span>=<span class="v">"unknown"</span>/&gt;
+        &lt;/<span class="t">gml:TimePeriod</span>&gt;
+      &lt;/<span class="t">gml:validTime</span>&gt;
+      &lt;<span class="t">aixm:interpretation</span>&gt;BASELINE&lt;/<span class="t">aixm:interpretation</span>&gt;
+      &lt;<span class="t">aixm:type</span>&gt;R&lt;/<span class="t">aixm:type</span>&gt;
+      &lt;<span class="t">aixm:designator</span>&gt;EHR4A&lt;/<span class="t">aixm:designator</span>&gt;
+      &lt;<span class="t">aixm:name</span>&gt;VOLKEL&lt;/<span class="t">aixm:name</span>&gt;
+      &lt;<span class="t">aixm:geometryComponent</span>&gt;
+        &lt;<span class="t">aixm:AirspaceGeometryComponent</span>&gt;
+          &lt;<span class="t">aixm:operation</span>&gt;BASE&lt;/<span class="t">aixm:operation</span>&gt;
+          &lt;<span class="t">aixm:theAirspaceVolume</span>&gt;
+            &lt;<span class="t">aixm:AirspaceVolume</span>&gt;
+              &lt;<span class="t">aixm:upperLimit</span> <span class="a">uom</span>=<span class="v">"FL"</span>&gt;065&lt;/<span class="t">aixm:upperLimit</span>&gt;
+              &lt;<span class="t">aixm:lowerLimit</span> <span class="a">uom</span>=<span class="v">"FT"</span>&gt;0&lt;/<span class="t">aixm:lowerLimit</span>&gt;
+              …
+</pre>
+              </div>
+
+            </div>
+
+            <div class="detailFoot">
+              <button class="btn btnSmall">KML</button>
+              <button class="btn btnSmall">GeoJSON</button>
+              <button class="btn btnSmall">XML kopiëren</button>
+              <div class="spacer"></div>
+              <button class="btn btnSmall">◂</button>
+              <button class="btn btnSmall">▸</button>
+            </div>
+          </aside>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================= scherm 3 -->
+    <div class="screen" data-screen="3">
+      <div class="work">
+
+        <section>
+          <div class="sectionHead">
+            <span class="sectionLabel">01 · Controle vóór export</span>
+            <span class="rule"></span>
+            <span class="meta">42 gebieden met LARA ID</span>
+          </div>
+          <div style="padding-top:14px">
+            <div class="exportGrid">
+
+              <div class="panel">
+                <div class="panelHead"><span class="sectionLabel">Bevindingen</span><div class="spacer"></div><span class="badge badgeWarn">2 aandachtspunten</span></div>
+                <div class="panelBody" style="padding-top:4px;padding-bottom:4px">
+                  <div class="checkRow"><span class="checkMark" style="color:var(--ok)">✓</span><span>Alle 42 gebieden hebben een unieke LARA Area ID.</span></div>
+                  <div class="checkRow"><span class="checkMark" style="color:var(--ok)">✓</span><span>41 gebieden hebben coördinaten (39 × <span class="mono">Straight Lines</span>, 2 × <span class="mono">Circle</span>).</span></div>
+                  <div class="checkRow"><span class="checkMark" style="color:var(--warn)">!</span><span><strong>EHD12</strong> (LARA 27) heeft geen opgeloste geometrie — de rij komt zonder coördinaten in de export. <a href="#">Bekijken</a></span></div>
+                  <div class="checkRow"><span class="checkMark" style="color:var(--warn)">!</span><span>Gat in de nummering: 14, 15 en 19 zijn niet toegekend. Dat mag, maar controleer of het bedoeld is.</span></div>
+                  <div class="checkRow"><span class="checkMark" style="color:var(--ok)">✓</span><span>Alle hoogtes zijn omgezet naar <span class="mono">FL</span> of <span class="mono">ft</span>; 3 × meters omgerekend.</span></div>
+                </div>
+              </div>
+
+              <div class="panel">
+                <div class="panelHead"><span class="sectionLabel">Werkboek</span><div class="spacer"></div><span class="meta">LARAV4_export.xlsx</span></div>
+                <div class="panelBody">
+                  <div class="sheetList">
+                    <div class="sheetRow"><span>1 · Areas</span><span>42 rijen</span></div>
+                    <div class="sheetRow"><span>2 · Area Volumes</span><span>42 rijen</span></div>
+                    <div class="sheetRow"><span>3 · Area Timesheets</span><span>42 rijen</span></div>
+                    <div class="sheetRow"><span>4 · CDR Segments</span><span>kop</span></div>
+                    <div class="sheetRow"><span>5 · CDR Segment Timesheets</span><span>kop</span></div>
+                    <div class="sheetRow"><span>6 · Points</span><span>kop</span></div>
+                    <div class="sheetRow"><span>7 · Area-CDR Relationships</span><span>kop</span></div>
+                    <div class="sheetRow"><span>8 · Meta</span><span>kop</span></div>
+                    <div class="sheetRow"><span>9 · Options</span><span>kop</span></div>
+                    <div class="sheetRow"><span>10 · Verificatie</span><span>42 rijen + kaartlinks</span></div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="sectionHead">
+            <span class="sectionLabel">02 · Downloaden</span>
+            <span class="rule"></span>
+          </div>
+          <div style="padding-top:14px" class="exportActions">
+            <button class="btn btnPrimary">Exporteer LARA V4 (.xlsx)</button>
+            <button class="btn">Alle gebieden als KML</button>
+            <button class="btn">Alle gebieden als GeoJSON</button>
+            <button class="btn">LARA IDs als CSV</button>
+          </div>
+          <p class="lead" style="padding-top:12px">
+            De xlsx volgt <span class="mono">LARAV4_import_aanvullende_gebieden.xlsx</span>. Sheet 10 is geen onderdeel van
+            het LARA-formaat maar een controlelaag: per gebied een link naar geojson.io om de coördinaten visueel na te lopen
+            vóór de import.
+          </p>
+        </section>
+
+      </div>
+    </div>
+
+    <footer class="footBar">
+      <span class="meta" id="footCtx">187 gebieden · 42 met LARA ID · 13 zonder geometrie</span>
+      <div class="spacer"></div>
+      <div class="keys">
+        <span class="key"><span class="keyCap">↑↓</span> rij</span>
+        <span class="key"><span class="keyCap">↵</span> ID opslaan</span>
+        <span class="key"><span class="keyCap">N</span> volgend vrij nummer</span>
+        <span class="key"><span class="keyCap">M</span> kaart</span>
+        <span class="key"><span class="keyCap">X</span> AIXM</span>
+      </div>
+    </footer>
+
+  </div>
+</div>
+
+<script>
+// --- gegevens voor de mockup-tabel ------------------------------------------
+const DATA = [
+  [1,  "EHR1",    "Deelen",                         "R",   "—", "GND",     "FL 065", "Polygoon"],
+  [2,  "EHR2",    "Gilze-Rijen",                    "R",   "—", "GND",     "3500 ft","Polygoon"],
+  [3,  "EHR4A",   "Volkel",                         "R",   "—", "GND",     "FL 065", "Polygoon"],
+  [4,  "EHR4B",   "Volkel noord",                   "R",   "—", "FL 065",  "FL 195", "Polygoon"],
+  [5,  "EHD41",   "Vliehors",                       "D",   "—", "GND",     "FL 055", "Polygoon"],
+  [6,  "EHD42",   "Cornfield",                      "D",   "—", "GND",     "FL 100", "Cirkel"],
+  [7,  "EHTRA10", "TRA 10 Noordzee",                "TRA", "C", "FL 055",  "FL 195", "Polygoon"],
+  [8,  "EHTRA12", "TRA 12 Wadden",                  "TRA", "C", "FL 095",  "FL 245", "Polygoon"],
+  [9,  "EHTSA2",  "TSA 2 Frisia",                   "TSA", "C", "FL 055",  "FL 245", "Polygoon"],
+  [10, "EHTSA3",  "TSA 3 Terschelling",             "TSA", "C", "FL 065",  "FL 245", "Polygoon"],
+  [11, "EHCTR1",  "Schiphol CTR",                   "CTR", "C", "GND",     "3000 ft","Polygoon"],
+  [12, "EHR8",    "Marnewaard",                     "R",   "—", "GND",     "1500 ft","Cirkel"],
+  [13, "EHD25",   "Oldebroek",                      "D",   "—", "GND",     "FL 095", "Polygoon"],
+  [16, "EHTRA15", "TRA 15 Oost",                    "TRA", "C", "FL 105",  "FL 245", "Polygoon"],
+  [17, "EHTRA16", "TRA 16 Zuid",                    "TRA", "C", "FL 055",  "FL 195", "Polygoon"],
+  [18, "EHR3",    "Woensdrecht",                    "R",   "—", "GND",     "3000 ft","Polygoon"],
+  [27, "EHD12",   "Noordzee grensgebied",           "D",   "—", "GND",     "FL 195", "—"],
+  [null,"EHD44",  "Breezanddijk",                   "D",   "—", "GND",     "1200 ft","Cirkel"],
+  [null,"EHCTA1", "Amsterdam CTA 1",                "CTA", "A", "FL 055",  "FL 195", "Polygoon"],
+  [null,"EHTMA1", "Schiphol TMA 1",                 "TMA", "A", "1500 ft", "FL 055", "Polygoon"],
+];
+
+const tbody = document.getElementById("rows");
+tbody.innerHTML = DATA.map(([id, ident, naam, type, klasse, onder, boven, geom], i) => {
+  const sel = ident === "EHR4A";
+  const geomCell = geom === "—"
+    ? '<span class="badge badgeWarn">onopgelost</span>'
+    : `<span class="dim">${geom}</span>`;
+  const idCell = id === null
+    ? `<div class="idCell"><input class="idInput" type="number" placeholder="—"><button class="btn btnSmall" title="Volgend vrij nummer">N</button></div>`
+    : `<div class="idCell"><input class="idInput" type="number" value="${id}"></div>`;
+  return `<tr data-selected="${sel}">
+    <td>${idCell}</td>
+    <td class="ident">${ident}</td>
+    <td>${naam}</td>
+    <td class="dim">${type}</td>
+    <td class="dim">${klasse}</td>
+    <td class="dim mono" style="font-size:11.5px">${onder}</td>
+    <td class="dim mono" style="font-size:11.5px">${boven}</td>
+    <td>${geomCell}</td>
+  </tr>`;
+}).join("") + `
+  <tr>
+    <td><div class="idCell"><input class="idInput idInputErr" type="number" value="7"><button class="btn btnSmall">N</button></div><div class="rowErr">7 is al in gebruik door EHTRA10</div></td>
+    <td class="ident">EHTMA2</td>
+    <td>Schiphol TMA 2</td>
+    <td class="dim">TMA</td>
+    <td class="dim">A</td>
+    <td class="dim mono" style="font-size:11.5px">2500 ft</td>
+    <td class="dim mono" style="font-size:11.5px">FL 055</td>
+    <td><span class="dim">Polygoon</span></td>
+  </tr>`;
+
+// --- schermwissel ------------------------------------------------------------
+function toon(n) {
+  document.querySelectorAll("[data-screen]").forEach(el =>
+    el.dataset.on = String(el.dataset.screen === String(n)));
+  document.querySelectorAll("[data-num]").forEach(el =>
+    el.className = "stepNum" + (el.dataset.num === String(n) ? " stepNumOn" : ""));
+  document.querySelectorAll("[data-lab]").forEach(el =>
+    el.className = el.dataset.lab === String(n) ? "stepLabelOn" : "stepLabel");
+  document.querySelectorAll(".rail .item[data-goto]").forEach(el =>
+    el.className = "item" + (el.dataset.goto === String(n) ? " itemActive" : ""));
+}
+document.querySelectorAll("[data-goto]").forEach(el =>
+  el.addEventListener("click", () => toon(el.dataset.goto)));
+toon(2);
+
+// --- tabs in het detailpaneel -----------------------------------------------
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach(x => x.className = "tab" + (x === t ? " tabOn" : ""));
+  document.querySelectorAll("[data-pane]").forEach(p =>
+    p.dataset.on = String(p.dataset.pane === t.dataset.tab));
+}));
+
+// --- thema -------------------------------------------------------------------
+const btn = document.getElementById("themeBtn");
+btn.addEventListener("click", () => {
+  const donker = document.documentElement.dataset.theme === "dark";
+  document.documentElement.dataset.theme = donker ? "light" : "dark";
+  btn.textContent = donker ? "◐ donker" : "◑ licht";
+});
+</script>
+</body>
+</html>
