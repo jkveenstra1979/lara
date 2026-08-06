@@ -264,11 +264,18 @@ export async function bouwImport(
     }
   });
 
-  const snippetRijen: SnippetRij[] = Object.entries(snippetIndex).map(([uuid, snippet]) => ({
-    dataset_id: datasetId,
-    uuid,
-    snippet,
-  }));
+  // Alleen de fragmenten van gebieden die we ook opslaan.
+  //
+  // `buildXmlSnippetIndex` indexeert élk element met een gml:identifier — in het
+  // AeroDB-bestand van 3 september 2026 zijn dat er 154.783 voor 922 airspaces.
+  // Alles wegschrijven kostte 27 seconden en honderden megabytes, terwijl we
+  // uitsluitend de airspace-fragmenten gebruiken (AIXM-tab en timesheets).
+  const gebruikteUuids = new Set(
+    airspaceRijen.map((r) => r.uuid_identifier).filter((u): u is string => Boolean(u))
+  );
+  const snippetRijen: SnippetRij[] = Object.entries(snippetIndex)
+    .filter(([uuid]) => gebruikteUuids.has(uuid))
+    .map(([uuid, snippet]) => ({ dataset_id: datasetId, uuid, snippet }));
 
   const onopgelosteGrenzen: OnopgelosteGrens[] = Array.from(grenzenPerUuid.entries())
     .map(([uuid, gebieden]) => ({ uuid, gebieden: Array.from(gebieden).sort() }))

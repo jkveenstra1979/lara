@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import type { ImportSamenvatting } from "@/lib/aixmImport";
 import styles from "./page.module.css";
 
-type Fase = "leeg" | "bezig" | "klaar" | "fout";
+type Fase = "leeg" | "uploaden" | "verwerken" | "klaar" | "fout";
 
 export type DatasetRij = {
   id: string;
@@ -37,26 +38,53 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
   const invoer = useRef<HTMLInputElement>(null);
 
   const airacGeldig = /^\d{4}$/.test(airac);
-  const kanVersturen = Boolean(bestand) && airacGeldig && fase !== "bezig";
+  const bezig = fase === "uploaden" || fase === "verwerken";
+  const kanVersturen = Boolean(bestand) && airacGeldig && !bezig;
 
+  /**
+   * Eerst het bestand rechtstreeks in de bucket, dan pas de route aanroepen.
+   *
+   * Het bestand door de request body sturen werkt lokaal maar niet op Vercel:
+   * daar worden bodies boven 4,5 MB afgekapt met een 413 in platte tekst. Een
+   * AIXM-bestand is al gauw tientallen megabytes.
+   */
   const verstuur = async () => {
     if (!bestand || !airacGeldig) return;
-    setFase("bezig");
     setFout(null);
     setSamenvatting(null);
-
-    const body = new FormData();
-    body.append("file", bestand);
-    body.append("airac", airac);
+    setFase("uploaden");
 
     try {
-      const res = await fetch("/api/upload", { method: "POST", body });
-      const data = await res.json();
-      if (!res.ok) {
-        setFout(data.error ?? "De import is mislukt.");
-        setFase("fout");
-        return;
+      const supabase = createClient();
+      const storagePath = `${crypto.randomUUID()}/${bestand.name}`;
+
+      const upload = await supabase.storage.from("aixm-uploads").upload(storagePath, bestand, {
+        contentType: bestand.type || "application/xml",
+        upsert: true,
+      });
+      if (upload.error) throw new Error(`Uploaden mislukte: ${upload.error.message}`);
+
+      setFase("verwerken");
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storagePath, filename: bestand.name, airac }),
+      });
+
+      // Een platform-fout (413, 504) komt niet als JSON terug.
+      const tekst = await res.text();
+      let data: { error?: string; samenvatting?: ImportSamenvatting } = {};
+      try {
+        data = JSON.parse(tekst);
+      } catch {
+        throw new Error(
+          res.status === 413
+            ? "Het bestand is te groot voor de server."
+            : `De server antwoordde met ${res.status}: ${tekst.slice(0, 120)}`
+        );
       }
+
+      if (!res.ok) throw new Error(data.error ?? "De import is mislukt.");
       setSamenvatting(data.samenvatting as ImportSamenvatting);
       setFase("klaar");
     } catch (error) {
@@ -134,7 +162,11 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
               disabled={!kanVersturen}
               onClick={verstuur}
             >
-              {fase === "bezig" ? "Bezig met inlezen…" : "Importeren"}
+              {fase === "uploaden"
+                ? "Bestand uploaden…"
+                : fase === "verwerken"
+                  ? "Inlezen en opslaan…"
+                  : "Importeren"}
             </button>
 
             <p className="lead" style={{ fontSize: 12, paddingBottom: 8 }}>
@@ -146,7 +178,7 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
       </section>
 
       {/* -------------------------------------------------------- resultaat -- */}
-      {(fase === "bezig" || fase === "klaar" || fase === "fout") && (
+      {(bezig || fase === "klaar" || fase === "fout") && (
         <section>
           <div className="sectionHead">
             <span className="sectionLabel">02 · Verwerking</span>
@@ -162,7 +194,7 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
             <div className={styles.voortgang}>
               <div
                 className={styles.voortgangVulling}
-                style={{ width: fase === "bezig" ? "60%" : "100%" }}
+                style={{ width: fase === "uploaden" ? "35%" : fase === "verwerken" ? "75%" : "100%" }}
               />
             </div>
 

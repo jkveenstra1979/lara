@@ -4,11 +4,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { bouwImport, geoborderLookupUitRijen } from "@/lib/aixmImport";
 
 export const runtime = "nodejs";
-// Een AIXM-bestand van 50 MB parsen duurt seconden, niet milliseconden.
+// Een AIXM-bestand van tientallen MB's parsen en wegschrijven duurt seconden.
+// Op Vercel geldt bovendien het plafond van het abonnement: 60 s op Hobby,
+// 300 s op Pro. Blijft de import daar net onder, dan is het snijden in wat er
+// per gebied wordt weggeschreven de eerste plek om te kijken.
 export const maxDuration = 300;
 
 const BUCKET = "aixm-uploads";
-const MAX_BYTES = 200 * 1024 * 1024;
 
 /** Rijen in stukken wegschrijven; één insert met duizenden rijen loopt vast. */
 async function insertInStukken<T>(
@@ -24,9 +26,15 @@ async function insertInStukken<T>(
 }
 
 /**
- * AIXM-bestand inlezen en opslaan.
+ * Een geüpload AIXM-bestand verwerken.
  *
- * De sessie bepaalt of je mag uploaden; het wegschrijven gebeurt met de
+ * Het bestand gaat **niet** door deze request. De browser zet het rechtstreeks
+ * in de bucket en stuurt hier alleen het pad naartoe; deze route haalt het
+ * daarvandaan op. Reden: een platform als Vercel kapt request bodies af op
+ * 4,5 MB en antwoordt dan met `Request Entity Too Large` in platte tekst — een
+ * AIXM-bestand van 96 MB komt er niet doorheen.
+ *
+ * De sessie bepaalt of je mag importeren; het wegschrijven gebeurt met de
  * service-role-sleutel, omdat één import honderden rijen over vier tabellen
  * verdeelt en dat niet halverwege mag stranden op een verlopen sessie.
  */
@@ -39,18 +47,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Niet ingelogd." }, { status: 401 });
   }
 
-  const formData = await req.formData();
-  const file = formData.get("file");
-  const airac = String(formData.get("airac") ?? "").trim();
+  const body = await req.json().catch(() => ({}));
+  const storagePath = String(body?.storagePath ?? "");
+  const filename = String(body?.filename ?? "aixm-upload.xml");
+  const airac = String(body?.airac ?? "").trim();
 
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "Geen bestand ontvangen." }, { status: 400 });
-  }
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json(
-      { error: `Bestand is groter dan ${MAX_BYTES / 1024 / 1024} MB.` },
-      { status: 413 }
-    );
+  if (!storagePath) {
+    return NextResponse.json({ error: "Er is geen bestand ontvangen." }, { status: 400 });
   }
   // Het AIRAC-veld is verplicht: het bepaalt de naam van het exportbestand en is
   // achteraf niet meer af te leiden.
@@ -63,8 +66,6 @@ export async function POST(req: NextRequest) {
 
   const admin = createAdminClient();
   const datasetId = crypto.randomUUID();
-  const filename = file.name || "aixm-upload.xml";
-  const storagePath = `${datasetId}/${filename}`;
 
   const { error: datasetError } = await admin.from("datasets").insert({
     id: datasetId,
@@ -87,20 +88,16 @@ export async function POST(req: NextRequest) {
   };
 
   try {
-    const buffer = Buffer.from(await file.arrayBuffer());
-
-    // Het bronbestand bewaren, zodat een import na een parserwijziging herhaald
-    // kan worden zonder het opnieuw op te vragen bij de leverancier.
-    const upload = await admin.storage.from(BUCKET).upload(storagePath, buffer, {
-      contentType: file.type || "application/xml",
-      upsert: true,
-    });
-    if (upload.error) return await faal(`Opslaan van het bestand mislukte: ${upload.error.message}`);
+    const download = await admin.storage.from(BUCKET).download(storagePath);
+    if (download.error || !download.data) {
+      return await faal(`Het bestand kon niet worden opgehaald: ${download.error?.message ?? "onbekend"}`);
+    }
+    const xml = await download.data.text();
 
     const { data: bekendeGrenzen } = await admin.from("geoborders").select("border_id, geojson");
     const uitTabel = geoborderLookupUitRijen(bekendeGrenzen ?? []);
 
-    const resultaat = await bouwImport(buffer, datasetId, uitTabel);
+    const resultaat = await bouwImport(xml, datasetId, uitTabel);
 
     await insertInStukken("airspaces", resultaat.airspaceRijen, admin);
     await insertInStukken("geometries", resultaat.geometrieRijen, admin);
