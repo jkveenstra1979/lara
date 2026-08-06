@@ -45,8 +45,12 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
    * Eerst het bestand rechtstreeks in de bucket, dan pas de route aanroepen.
    *
    * Het bestand door de request body sturen werkt lokaal maar niet op Vercel:
-   * daar worden bodies boven 4,5 MB afgekapt met een 413 in platte tekst. Een
-   * AIXM-bestand is al gauw tientallen megabytes.
+   * daar worden bodies boven 4,5 MB afgekapt met een 413 in platte tekst.
+   *
+   * En het gaat gecomprimeerd. Een AIXM-bestand is grotendeels herhaling —
+   * 96 MB wordt 8,4 MB — en de storage-service heeft standaard een grens van
+   * 50 MB per bestand, ongeacht wat er op de bucket staat ingesteld. Zo past
+   * elk realistisch bestand, en de upload is bovendien tien keer sneller.
    */
   const verstuur = async () => {
     if (!bestand || !airacGeldig) return;
@@ -56,13 +60,29 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
 
     try {
       const supabase = createClient();
-      const storagePath = `${crypto.randomUUID()}/${bestand.name}`;
 
-      const upload = await supabase.storage.from("aixm-uploads").upload(storagePath, bestand, {
-        contentType: bestand.type || "application/xml",
+      // CompressionStream is standaard in moderne browsers; ontbreekt hij, dan
+      // gaat het bestand ongecomprimeerd en geldt de grens van de server.
+      let teUploaden: Blob = bestand;
+      let naam = bestand.name;
+      if (typeof CompressionStream !== "undefined") {
+        const gz = bestand.stream().pipeThrough(new CompressionStream("gzip"));
+        teUploaden = await new Response(gz).blob();
+        naam = `${bestand.name}.gz`;
+      }
+
+      const storagePath = `${crypto.randomUUID()}/${naam}`;
+      const upload = await supabase.storage.from("aixm-uploads").upload(storagePath, teUploaden, {
+        contentType: naam.endsWith(".gz") ? "application/gzip" : "application/xml",
         upsert: true,
       });
-      if (upload.error) throw new Error(`Uploaden mislukte: ${upload.error.message}`);
+      if (upload.error) {
+        throw new Error(
+          /exceeded the maximum allowed size/i.test(upload.error.message)
+            ? `Het bestand is te groot voor de opslag, ook ingepakt (${(teUploaden.size / 1024 / 1024).toFixed(0)} MB). Verhoog FILE_SIZE_LIMIT in de storage-service.`
+            : `Uploaden mislukte: ${upload.error.message}`
+        );
+      }
 
       setFase("verwerken");
       const res = await fetch("/api/upload", {

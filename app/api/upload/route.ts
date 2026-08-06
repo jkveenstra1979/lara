@@ -1,3 +1,4 @@
+import { gunzipSync } from "node:zlib";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -92,7 +93,11 @@ export async function POST(req: NextRequest) {
     if (download.error || !download.data) {
       return await faal(`Het bestand kon niet worden opgehaald: ${download.error?.message ?? "onbekend"}`);
     }
-    const xml = await download.data.text();
+
+    // De browser pakt het bestand in vóór de upload; zie ImportForm.
+    const ruw = Buffer.from(await download.data.arrayBuffer());
+    const isGzip = storagePath.endsWith(".gz") || (ruw[0] === 0x1f && ruw[1] === 0x8b);
+    const xml = (isGzip ? gunzipSync(ruw) : ruw).toString("utf-8");
 
     const { data: bekendeGrenzen } = await admin.from("geoborders").select("border_id, geojson");
     const uitTabel = geoborderLookupUitRijen(bekendeGrenzen ?? []);

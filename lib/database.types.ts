@@ -275,6 +275,34 @@ export type Database = {
         ];
       };
 
+      gebruikers: {
+        Row: {
+          id: string;
+          email: string;
+          naam: string | null;
+          rol: "admin" | "user";
+          created_at: string;
+          last_seen: string | null;
+        };
+        Insert: {
+          id: string;
+          email: string;
+          naam?: string | null;
+          rol?: "admin" | "user";
+          created_at?: string;
+          last_seen?: string | null;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          naam?: string | null;
+          rol?: "admin" | "user";
+          created_at?: string;
+          last_seen?: string | null;
+        };
+        Relationships: [];
+      };
+
       geoborders: {
         Row: {
           id: string;
@@ -317,6 +345,7 @@ export type Geometrie = Tabellen["geometries"]["Row"];
 export type LaraArea = Tabellen["lara_areas"]["Row"];
 export type XmlSnippet = Tabellen["xml_snippets"]["Row"];
 export type Geoborder = Tabellen["geoborders"]["Row"];
+export type GebruikerRij = Tabellen["gebruikers"]["Row"];
 
 /** De status van een import, zoals de check-constraint hem toestaat. */
 export type DatasetStatus = "queued" | "running" | "done" | "error";
