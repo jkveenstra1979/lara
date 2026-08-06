@@ -57,6 +57,24 @@ Zonder account kom je er met:
 npm run gebruiker -- jan@example.nl
 ```
 
+### Landsgrenzen
+
+104 van de 922 gebieden in het AIXM van 3 september 2026 volgen een landsgrens
+in plaats van hun eigen coördinaten op te schrijven. Ontbreekt zo'n grens, dan
+sluit de parser het gebied met een rechte lijn — zonder iets te melden. De
+applicatie vangt dat af (zie [HANDOVER § 7](docs/HANDOVER.md)), maar beter is
+dat het niet gebeurt.
+
+De grenzen zitten in het AIXM-bestand zelf en worden bij elke import bewaard.
+Om de tabel alvast te vullen — of na te lopen:
+
+```
+npm run geoborders -- pad/naar/aixm.xml
+```
+
+Grenzen veranderen niet; zeven stuks dekken Nederland, België, Duitsland,
+Frankrijk en Luxemburg.
+
 ### Openstaande migraties
 
 Twee stuks:

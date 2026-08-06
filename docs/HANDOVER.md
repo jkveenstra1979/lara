@@ -257,6 +257,17 @@ De parser heeft externe grenslijnen nodig (`GeoBorderLookup`) om airspaces te sl
 
 Vastgelegd in `lib/__tests__/aixmImport.test.ts` ("noemt een gebied met een ontbrekende grens niet langer 'ok'").
 
+**Hoeveel het er zijn.** In het AIXM van 3 september 2026: zeven grenzen
+(BELGIUM_NETHERLANDS, GERMANY_NETHERLANDS, BELGIUM_GERMANY, BELGIUM_FRANCE,
+BELGIUM_LUXEMBOURG, GERMANY_LUXEMBOURG, FRANCE_LUXEMBOURG) en **104 gebieden die
+er een volgen**, met 146 verwijzingen. De Belgisch-Nederlandse grens alleen al
+raakt 67 gebieden. Geen randgeval dus.
+
+Getoetst door de `GeoBorder`-elementen uit het bestand te knippen en opnieuw te
+importeren: 104 gebieden krijgen dan `partial` en alle zes de betrokken grenzen
+worden gemeld met de gebieden die erop wachten. Met de grenzen uit de tabel
+erbij: nul. 
+
 Aanpak hier:
 
 1. **Uit het bestand zelf.** `parseAixm` doet dit al: grenzen uit het AIXM leggen zich over de meegegeven lookup heen. Die volgorde klopt en hoefde niet te veranderen.
