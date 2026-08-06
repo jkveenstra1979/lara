@@ -13,7 +13,33 @@ import { supabaseIsIngesteld } from "@/lib/supabase/config";
  * Zonder dat laatste verloopt de sessie tijdens gebruik.
  */
 
-const PUBLIEKE_PADEN = ["/inloggen", "/auth", "/uitnodiging"];
+/**
+ * Paden die zonder sessie bereikbaar zijn.
+ *
+ * `/uitnodiging` en de bijbehorende route horen erbij: wie daar komt heeft per
+ * definitie nog geen account. Het token in de link is het bewijs, en de route
+ * controleert zelf of het nog geldig en ongebruikt is.
+ *
+ * Let op het verschil met `/api/uitnodigingen` (meervoud) — dat is de
+ * beheerroute en die blijft afgeschermd. Zie `isPubliekPad`.
+ */
+const PUBLIEKE_PADEN = [
+  "/inloggen",
+  "/auth",
+  "/uitnodiging",
+  "/api/uitnodiging/accepteren",
+];
+
+/**
+ * Een pad is publiek als het exact overeenkomt of eronder valt.
+ *
+ * Bewust niet met een kale `startsWith`: daarmee zou `/uitnodiging` ook
+ * `/uitnodigingen` dekken, en dat is precies de beheerroute die juist
+ * afgeschermd moet blijven. Het scheelt één letter.
+ */
+export function isPubliekPad(pad: string): boolean {
+  return PUBLIEKE_PADEN.some((p) => pad === p || pad.startsWith(`${p}/`));
+}
 
 export async function proxy(request: NextRequest) {
   // Nog geen Supabase-project: alles doorlaten, de startpagina legt uit wat mist.
@@ -47,7 +73,7 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pad = request.nextUrl.pathname;
-  const isPubliek = PUBLIEKE_PADEN.some((p) => pad.startsWith(p));
+  const isPubliek = isPubliekPad(pad);
 
   if (!user && !isPubliek) {
     const url = request.nextUrl.clone();
