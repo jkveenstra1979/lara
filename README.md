@@ -11,8 +11,13 @@ Afgeleid van [Airspace_management](../Airspace_management), waar de LARA-export 
 ```
 npm install
 npm run dev
-npm test          # parsertests
+npm test          # parser- en exporttests
+npm run controle  # lint, typecheck, tests en build — draai dit vóór een push
 ```
+
+`npm run build` compileert éérst en typecheckt daarná. Wie alleen naar
+"Compiled successfully" kijkt, mist een typefout die de deploy alsnog laat
+vallen; `npm run controle` stopt bij de eerste die faalt.
 
 De applicatie draait ook zonder Supabase; de startpagina zegt dan wat er ontbreekt.
 

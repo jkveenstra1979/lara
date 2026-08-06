@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "check:supabase": "node --env-file-if-exists=.env.local scripts/check-supabase.mts",
     "gebruiker": "node --env-file-if-exists=.env.local scripts/gebruiker-toevoegen.mts",
-    "geoborders": "tsx --env-file-if-exists=.env.local scripts/geoborders-importeren.mts"
+    "geoborders": "tsx --env-file-if-exists=.env.local scripts/geoborders-importeren.mts",
+    "controle": "npm run lint && npx tsc --noEmit && npm test && npm run build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

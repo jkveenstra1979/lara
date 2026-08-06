@@ -107,7 +107,7 @@ const telPunten = (waarde: unknown): number => {
  * `geometries` bevat per gebied ook een rij met operatie `AGG` — de vorm van het
  * geheel. Die staat vooraan, dus wie blind `rijen[0]` pakt meet de verkeerde.
  */
-const puntenVanEersteVolume = (rijen: { operation?: string | null; geojson: unknown }[]) => {
+const puntenVanEersteVolume = (rijen: { operation?: string | null; geojson?: unknown }[]) => {
   const volume = rijen.find((r) => r.operation !== "AGG") ?? rijen[0];
   return telPunten((volume?.geojson as { geometry?: { coordinates?: unknown } } | null)?.geometry?.coordinates);
 };
