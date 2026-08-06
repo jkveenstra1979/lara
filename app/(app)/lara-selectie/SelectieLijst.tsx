@@ -79,7 +79,16 @@ export default function SelectieLijst({
         body: JSON.stringify({ airspaceId: rij.airspaceId, laraAreaId: nieuw }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "Opslaan mislukt.");
+      if (!res.ok) {
+        // Bij een botsing helpt het te weten wie het nummer heeft; dat staat in
+        // de lijst die we toch al in beeld hebben.
+        const houder = nieuw !== null ? rijen.find((r) => r.laraAreaId === nieuw) : undefined;
+        throw new Error(
+          data.code === "duplicaat" && houder
+            ? `Nummer ${nieuw} is al van ${houder.ident}.`
+            : (data.error ?? "Opslaan mislukt.")
+        );
+      }
       router.refresh();
     } catch (error) {
       setRijen((lijst) =>
@@ -247,6 +256,11 @@ export default function SelectieLijst({
                 <td>
                   <div className={styles.idCel}>
                     <input
+                      // key op de waarde: na een geweigerd nummer zet React het
+                      // veld terug op wat er werkelijk staat. Zonder dit bleef de
+                      // afgekeurde waarde in beeld en probeerde elke volgende
+                      // blur hem opnieuw — twee, drie keer dezelfde 409.
+                      key={`${rij.airspaceId}-${rij.laraAreaId ?? "leeg"}`}
                       type="number"
                       min={1}
                       className={`${styles.idVeld} ${fouten[rij.airspaceId] ? styles.idVeldFout : ""}`}
@@ -256,6 +270,10 @@ export default function SelectieLijst({
                       onBlur={(e) => bewaarNummer(rij, e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") e.currentTarget.blur();
+                        if (e.key === "Escape") {
+                          e.currentTarget.value = String(rij.laraAreaId ?? "");
+                          e.currentTarget.blur();
+                        }
                       }}
                       aria-label={`LARA Area ID voor ${rij.ident}`}
                     />

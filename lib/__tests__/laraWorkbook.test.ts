@@ -112,25 +112,51 @@ describe("bouwLaraWorkbook", () => {
     expect(Object.keys(sheets)).toEqual(["Areas", "Area Volumes", "Area Timesheets"]);
   });
 
-  it("schrijft alleen de verplichte kolommen plus wat uit AIXM komt", async () => {
+  it("houdt de kolomindeling van de template aan", async () => {
+    // Alle 35 kolommen, in dezelfde volgorde als het bestand dat nu draait —
+    // zodat de twee naast elkaar te leggen zijn.
     const { buffer } = await bouwLaraWorkbook([gebied()]);
     const sheets = await lees(buffer);
+    const kop = sheets["Areas"][0];
 
-    expect(sheets["Areas"][0]).toEqual([
-      "Area ID", "Area Name", "Full Name", "UUID", "Type", "AMC",
-      "Start Date (dd/MM/yyyy)", "End Date (dd/MM/yyyy)",
-    ]);
-    expect(sheets["Areas"][1]).toEqual([
-      1, "EHR1", "Deelen", "aaaaaaaa-0000-0000-0000-000000000001", "R", "EHMCZAMC",
-      "01/01/2018", "31/12/2036",
-    ]);
+    expect(kop).toHaveLength(35);
+    expect(kop[0]).toBe("Area ID");
+    expect(kop[16]).toBe("Type");
+    expect(kop[17]).toBe("AMC");
+    expect(kop[34]).toBe("Above Unit (FL/ft)");
+  });
+
+  it("vult de verplichte velden met wat uit AIXM komt", async () => {
+    const { buffer } = await bouwLaraWorkbook([gebied()]);
+    const rij = (await lees(buffer))["Areas"][1];
+
+    expect(rij[0]).toBe(1);                                            // Area ID
+    expect(rij[1]).toBe("EHR1");                                       // Area Name
+    expect(rij[2]).toBe("Deelen");                                     // Full Name
+    expect(rij[5]).toBe("aaaaaaaa-0000-0000-0000-000000000001");       // UUID
+    expect(rij[16]).toBe("R");                                         // Type
+    expect(rij[17]).toBe("EHMCZAMC");                                  // AMC
+    expect(rij[18]).toBe("01/01/2018");                                // Start Date
+    expect(rij[19]).toBe("31/12/2036");                                // End Date
+  });
+
+  it("vult de optionele velden zoals de bestaande export dat doet", async () => {
+    const { buffer } = await bouwLaraWorkbook([gebied()]);
+    const rij = (await lees(buffer))["Areas"][1];
+
+    expect(rij[4]).toBe("YES");        // Send Over FMTP
+    expect(rij[20]).toBe("03:00");     // Reference Allocation
+    expect(rij[23]).toBe("AMA");       // Area Manageability Type
+    expect(rij[24]).toBe("AUTOMATIC"); // Activation Type
+    expect(rij[26]).toBe(30);          // Pending Time
+    expect(rij[34]).toBe("ft");        // Above Unit
   });
 
   it("neemt het type uit AIXM over in plaats van altijd R", async () => {
     const { buffer } = await bouwLaraWorkbook([gebied({ type: "TRA", ident: "EHTRA10" })]);
     const sheets = await lees(buffer);
 
-    expect(sheets["Areas"][1][4]).toBe("TRA");
+    expect(sheets["Areas"][1][16]).toBe("TRA");
   });
 
   it("gebruikt de geldigheid uit de timeslice als die er is", async () => {
@@ -139,8 +165,8 @@ describe("bouwLaraWorkbook", () => {
     ]);
     const sheets = await lees(buffer);
 
-    expect(sheets["Areas"][1][6]).toBe("10/07/2025");
-    expect(sheets["Areas"][1][7]).toBe("01/01/2027");
+    expect(sheets["Areas"][1][18]).toBe("10/07/2025");
+    expect(sheets["Areas"][1][19]).toBe("01/01/2027");
   });
 
   it("schrijft één rij per volume in sheet 2", async () => {

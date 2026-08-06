@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { bouwImport, geoborderLookupUitRijen } from "@/lib/aixmImport";
+import { neemSelectieOver, vindBronDataset, type OvernameResultaat } from "@/lib/overnemen";
 
 export const runtime = "nodejs";
 // Een AIXM-bestand van tientallen MB's parsen en wegschrijven duurt seconden.
@@ -124,6 +125,24 @@ export async function POST(req: NextRequest) {
       if (error) console.error("Geoborders bewaren mislukte:", error.message);
     }
 
+    // De LARA-lijst meenemen van de vorige cyclus. Die verandert nauwelijks;
+    // hem elke keer opnieuw samenstellen is werk dat niemand doet, en één
+    // vergeten cyclus levert een lege export op.
+    let overname: OvernameResultaat | null = null;
+    const bron = await vindBronDataset(admin, datasetId);
+    if (bron) {
+      const { resultaat: over, error: overFout } = await neemSelectieOver(
+        admin,
+        datasetId,
+        bron.id,
+        user.id
+      );
+      // Niet fataal: de import is gelukt, alleen het overnemen niet. Op scherm 3
+      // staat de knop om het alsnog te doen.
+      if (overFout) console.error("Overnemen mislukte:", overFout);
+      overname = over;
+    }
+
     await admin
       .from("datasets")
       .update({
@@ -133,7 +152,7 @@ export async function POST(req: NextRequest) {
       })
       .eq("id", datasetId);
 
-    return NextResponse.json({ datasetId, samenvatting: resultaat.samenvatting });
+    return NextResponse.json({ datasetId, samenvatting: resultaat.samenvatting, overname });
   } catch (error) {
     const bericht = error instanceof Error ? error.message : "Verwerken van het AIXM-bestand mislukte.";
     return await faal(bericht);

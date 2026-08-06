@@ -2,25 +2,34 @@ import ExcelJS from "exceljs";
 import type { Feature, Geometry } from "geojson";
 import { formatGeometryForLARA, type LaraAltitude } from "./laraUtils";
 import { extractTimesheets, timesheetsNaarLara, type LaraTimesheetRij } from "./laraTimesheets";
+import {
+  AREA_STANDAARDWAARDEN,
+  KLEUR_OPTIONEEL,
+  KOLOMMEN_AREAS,
+  KOLOMMEN_TIMESHEETS,
+  KOLOMMEN_VOLUMES,
+  type Kolom,
+} from "./laraKolommen";
 
 /**
  * Het LARA-importwerkboek bouwen.
  *
- * Volgt `documents/LARA V4.0 Excel Airspace Import Format.pdf`. Twee dingen
- * werken anders dan in de brontool, allebei omdat de specificatie het toestaat:
+ * Volgt `documents/LARA V4.0 Excel Airspace Import Format.pdf`, met de opmaak
+ * van de meegeleverde template: dezelfde koppen, dezelfde volgorde, dezelfde
+ * kolombreedtes, en de groene kop op optionele kolommen.
  *
- *   * **Alleen de zes verplichte kolommen plus wat uit AIXM komt.** § 2.1.3 zegt
- *     dat lege optionele velden een standaardwaarde uit LARA's eigen
- *     `housekeeperSettings.gsdk` krijgen, en § 2.1.4 dat optionele kolommen
- *     helemaal weg mogen. De brontool vult 34 kolommen met verzonnen waarden en
- *     overschrijft daarmee wat de beheerder in LARA heeft ingesteld.
+ * Alle 35 kolommen worden geschreven, ook al mogen de optionele volgens § 2.1.4
+ * weggelaten worden. Reden: het werkboek moet naast het bestand kunnen liggen
+ * dat er nu draait. Een export met acht kolommen is niet te vergelijken met een
+ * van vijfendertig, en dat maakt controleren lastiger dan nodig.
  *
- *   * **Geen lege werkbladen.** § 2.1.1: het bestand hoeft niet alle bladen te
- *     bevatten.
+ * Eén ding wijkt bewust af van de bestaande export: `Type` komt uit AIXM in
+ * plaats van altijd `R`. De specificatie noemt het veld verplicht en zegt dat
+ * een onbekende waarde `UNKNOWN` wordt — een TRA als `R` wegschrijven is dus
+ * geen opmaakkeuze maar een fout.
  *
- * De kolomkoppen komen letterlijk uit de meegeleverde template, inclusief de
- * formaataanwijzing tussen haakjes — § 2.1.4 zegt dat het formaat in de kop
- * staat, dus die moet erbij.
+ * Geen lege werkbladen: § 2.1.1 zegt dat een bestand niet alle bladen hoeft te
+ * bevatten, en zes lege sheets voegen niets toe.
  */
 
 /** De 21 Area Types die LARA kent, uit de sheet `Options` van de template. */
@@ -115,39 +124,25 @@ export function naarLaraHoogte(alt: LaraAltitude | null): { waarde: number | str
   return { waarde: alt.alt, eenheid: alt.unit };
 }
 
-const KOP_AREAS = [
-  "Area ID",
-  "Area Name",
-  "Full Name",
-  "UUID",
-  "Type",
-  "AMC",
-  "Start Date (dd/MM/yyyy)",
-  "End Date (dd/MM/yyyy)",
-];
+/**
+ * De kopregel met de opmaak uit de template: breedtes per kolom en een groene
+ * vulling op alles wat optioneel is. Vet is toegevoegd — de template heeft dat
+ * niet, maar zonder onderscheid leest een kopregel van 35 kolommen slecht.
+ */
+const kopRij = (ws: ExcelJS.Worksheet, kolommen: Kolom[]) => {
+  ws.columns = kolommen.map((k) => ({ width: k.breedte }));
+  const rij = ws.addRow(kolommen.map((k) => k.kop));
+  rij.font = { bold: true };
 
-const KOP_VOLUMES = [
-  "Area ID",
-  "Lower Alt",
-  "Lower Unit (FL/ft)",
-  "Upper Alt",
-  "Upper Unit (FL/ft)",
-  "Volume Type (Straight Lines / Circle)",
-  "Coordinates (Degrees, minutes, seconds, or decimal degrees separated by a semi-colon (straight lines) or centre-point in degrees, minutes, seconds or decimal degrees followed by diameter in nautical miles (circle))",
-];
+  kolommen.forEach((kolom, i) => {
+    if (kolom.verplicht) return;
+    rij.getCell(i + 1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: KLEUR_OPTIONEEL },
+    };
+  });
 
-const KOP_TIMESHEETS = [
-  "Area ID",
-  "Start Date (dd/MM/yyyy)",
-  "End Date  (dd/MM/yyyy)",
-  "Start Time (HH:mm)",
-  "End Time (HH:mm)",
-  "Day From (MON/TUE/..etc)",
-  "Day Til (MON/TUE/..etc)",
-];
-
-const kopRij = (ws: ExcelJS.Worksheet, koppen: string[]) => {
-  ws.addRow(koppen).font = { bold: true };
   ws.views = [{ state: "frozen", ySplit: 1 }];
 };
 
@@ -184,9 +179,9 @@ export async function bouwLaraWorkbook(
   const wsAreas = wb.addWorksheet("Areas");
   const wsVolumes = wb.addWorksheet("Area Volumes");
   const wsTimesheets = wb.addWorksheet("Area Timesheets");
-  kopRij(wsAreas, KOP_AREAS);
-  kopRij(wsVolumes, KOP_VOLUMES);
-  kopRij(wsTimesheets, KOP_TIMESHEETS);
+  kopRij(wsAreas, KOLOMMEN_AREAS);
+  kopRij(wsVolumes, KOLOMMEN_VOLUMES);
+  kopRij(wsTimesheets, KOLOMMEN_TIMESHEETS);
 
   const overgeslagenTimesheets: WorkbookResultaat["overgeslagenTimesheets"] = [];
   let volumeRijen = 0;
@@ -202,15 +197,37 @@ export async function bouwLaraWorkbook(
     const start = naarLaraDatum(gebied.validTimeBegin) ?? opties.standaardStartDatum;
     const eind = naarLaraDatum(gebied.validTimeEnd) ?? opties.standaardEindDatum;
 
+    const std = AREA_STANDAARDWAARDEN;
     wsAreas.addRow([
-      areaId,
-      gebied.ident,
-      gebied.name ?? "",
-      gebied.uuid ?? "",
-      gebied.type ?? "",
+      areaId,                       // Area ID
+      gebied.ident,                 // Area Name
+      gebied.name ?? "",            // Full Name
+      gebied.ident,                 // FMTP Name — gelijk aan Area Name
+      std.sendOverFmtp,
+      gebied.uuid ?? "",            // UUID; leeg laten mag, LARA maakt er dan een
+      std.aupUup,
+      std.notamEnabled,
+      "", "", "", "",               // NOTAM-intervallen en -eenheden
+      "", "", "", "",               // NOTAM purposes, code group, scope, traffic
+      gebied.type ?? "",            // Type — uit AIXM, niet altijd R
       opties.amc,
       start,
       eind,
+      std.referenceAllocation,
+      std.dailyRefAlloc,
+      std.appliesByDefault,
+      std.manageabilityType,
+      std.activationType,
+      std.autoRelease,
+      std.pendingTime,
+      std.releasePending,
+      std.beforeBuffer,
+      std.afterBuffer,
+      std.betweenBuffer,
+      std.belowBuffer,
+      std.belowUnit,
+      std.aboveBuffer,
+      std.aboveUnit,
     ]);
 
     // Sheet 2: één rij per volume. Een gebied dat uit meerdere volumes bestaat

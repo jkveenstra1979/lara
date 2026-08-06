@@ -123,3 +123,21 @@
 .rij {
   cursor: pointer;
 }
+
+/* Verschijnt pas als er iets is aangevinkt. */
+.actieBalk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--action-wash);
+  border-bottom: 1px solid var(--action-hl);
+  flex-shrink: 0;
+}
+
+.actieTelling {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--action);
+  font-weight: 600;
+}

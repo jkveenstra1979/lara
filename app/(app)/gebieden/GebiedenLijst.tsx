@@ -11,8 +11,14 @@ type LaraFilter = "alle" | "in" | "uit";
 /**
  * Scherm 2 — alles wat in het AIXM-bestand zit.
  *
- * Het selectievakje is de enige actie: hoort dit gebied in LARA? Het Area ID
- * hoort bij de selectie en wordt op scherm 3 toegekend, niet hier.
+ * Het vinkje is een **voorselectie**, geen toestand. Je vinkt aan wat je wilt
+ * behandelen en drukt dan op toevoegen of verwijderen; of een gebied al in LARA
+ * staat lees je in de laatste kolom.
+ *
+ * Dat onderscheid is er niet altijd geweest. Eerst wás het vinkje de
+ * LARA-status en voegde de knop alles toe wat de filters overlieten. Bij 922
+ * gebieden gaf dat "919 toevoegen aan LARA" naast drie aangevinkte rijen — één
+ * klik van een lijst die je daarna met de hand mag opschonen.
  */
 export default function GebiedenLijst({
   datasetId,
@@ -26,7 +32,8 @@ export default function GebiedenLijst({
   const [type, setType] = useState("");
   const [klasse, setKlasse] = useState("");
   const [laraFilter, setLaraFilter] = useState<LaraFilter>("alle");
-  const [bezig, setBezig] = useState<Set<string>>(new Set());
+  const [aangevinkt, setAangevinkt] = useState<Set<string>>(new Set());
+  const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
   const [gekozen, setGekozen] = useState<string | null>(null);
   const router = useRouter();
@@ -53,13 +60,36 @@ export default function GebiedenLijst({
   }, [gebieden, zoek, type, klasse, laraFilter]);
 
   const inLara = gebieden.filter((g) => g.inLara).length;
-  const zichtbaarNietInLara = zichtbaar.filter((g) => !g.inLara);
 
-  /** Toevoegen of verwijderen; de lijst wordt meteen bijgewerkt en teruggedraaid bij een fout. */
+  // Wat de knoppen gaan doen, gerekend over de aangevinkte rijen.
+  const gekozenGebieden = gebieden.filter((g) => aangevinkt.has(g.id));
+  const toeTeVoegen = gekozenGebieden.filter((g) => !g.inLara);
+  const teVerwijderen = gekozenGebieden.filter((g) => g.inLara);
+
+  const allesZichtbaarAangevinkt =
+    zichtbaar.length > 0 && zichtbaar.every((g) => aangevinkt.has(g.id));
+
+  const vinkAan = (id: string) =>
+    setAangevinkt((s) => {
+      const volgende = new Set(s);
+      if (volgende.has(id)) volgende.delete(id);
+      else volgende.add(id);
+      return volgende;
+    });
+
+  const vinkAllesZichtbaar = () =>
+    setAangevinkt((s) => {
+      const volgende = new Set(s);
+      if (allesZichtbaarAangevinkt) for (const g of zichtbaar) volgende.delete(g.id);
+      else for (const g of zichtbaar) volgende.add(g.id);
+      return volgende;
+    });
+
+  /** Toevoegen of verwijderen; meteen zichtbaar, teruggedraaid bij een fout. */
   const wissel = async (ids: string[], naarLara: boolean) => {
     if (!ids.length) return;
     setFout(null);
-    setBezig((b) => new Set([...b, ...ids]));
+    setBezig(true);
     setGebieden((lijst) =>
       lijst.map((g) =>
         ids.includes(g.id)
@@ -78,6 +108,7 @@ export default function GebiedenLijst({
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "De wijziging is niet opgeslagen.");
       }
+      setAangevinkt(new Set());
       // De rail, de sessiebalk en de voetbalk tonen tellingen die nu veranderd
       // zijn; die staan in server components en moeten opnieuw worden opgehaald.
       router.refresh();
@@ -87,11 +118,7 @@ export default function GebiedenLijst({
       );
       setFout(error instanceof Error ? error.message : "De wijziging is niet opgeslagen.");
     } finally {
-      setBezig((b) => {
-        const volgende = new Set(b);
-        for (const id of ids) volgende.delete(id);
-        return volgende;
-      });
+      setBezig(false);
     }
   };
 
@@ -137,17 +164,39 @@ export default function GebiedenLijst({
           <span className={styles.telling}>
             {zichtbaar.length} van {gebieden.length} · {inLara} in LARA
           </span>
-          <button
-            type="button"
-            className="btn btnSmall btnPrimary"
-            disabled={!zichtbaarNietInLara.length}
-            onClick={() => wissel(zichtbaarNietInLara.map((g) => g.id), true)}
-          >
-            {zichtbaarNietInLara.length
-              ? `${zichtbaarNietInLara.length} toevoegen aan LARA`
-              : "Alles staat in LARA"}
-          </button>
         </div>
+
+        {/* De actiebalk verschijnt pas als je iets hebt aangevinkt. Zo kan er
+            niets gebeuren waar je niet om hebt gevraagd. */}
+        {gekozenGebieden.length > 0 && (
+          <div className={styles.actieBalk}>
+            <span className={styles.actieTelling}>{gekozenGebieden.length} aangevinkt</span>
+            {toeTeVoegen.length > 0 && (
+              <button
+                type="button"
+                className="btn btnSmall btnPrimary"
+                disabled={bezig}
+                onClick={() => wissel(toeTeVoegen.map((g) => g.id), true)}
+              >
+                {toeTeVoegen.length} toevoegen aan LARA
+              </button>
+            )}
+            {teVerwijderen.length > 0 && (
+              <button
+                type="button"
+                className="btn btnSmall"
+                disabled={bezig}
+                onClick={() => wissel(teVerwijderen.map((g) => g.id), false)}
+              >
+                {teVerwijderen.length} uit LARA halen
+              </button>
+            )}
+            <span className="spacer" />
+            <button type="button" className="btn btnSmall" onClick={() => setAangevinkt(new Set())}>
+              Selectie wissen
+            </button>
+          </div>
+        )}
 
         {fout && <div className={styles.foutBalk}>{fout}</div>}
 
@@ -155,8 +204,20 @@ export default function GebiedenLijst({
           <table>
             <thead>
               <tr>
-                <th className={styles.pickCel} title="In de LARA-lijst">
-                  ✓
+                <th className={styles.pickCel}>
+                  <button
+                    type="button"
+                    className={`${styles.pick} ${allesZichtbaarAangevinkt ? styles.pickAan : ""}`}
+                    onClick={vinkAllesZichtbaar}
+                    aria-label={
+                      allesZichtbaarAangevinkt ? "Selectie wissen" : "Alles in beeld aanvinken"
+                    }
+                    title={
+                      allesZichtbaarAangevinkt
+                        ? "Selectie wissen"
+                        : `${zichtbaar.length} zichtbare gebieden aanvinken`
+                    }
+                  />
                 </th>
                 <th style={{ width: 110 }}>Designator</th>
                 <th>Naam</th>
@@ -165,6 +226,7 @@ export default function GebiedenLijst({
                 <th style={{ width: 82 }}>Onder</th>
                 <th style={{ width: 82 }}>Boven</th>
                 <th style={{ width: 150 }}>Geometrie</th>
+                <th style={{ width: 100 }}>In LARA</th>
               </tr>
             </thead>
             <tbody>
@@ -178,13 +240,10 @@ export default function GebiedenLijst({
                   <td className={styles.pickCel} onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
-                      className={`${styles.pick} ${g.inLara ? styles.pickAan : ""}`}
-                      disabled={bezig.has(g.id)}
-                      aria-pressed={g.inLara}
-                      aria-label={
-                        g.inLara ? `${g.ident} uit de LARA-lijst halen` : `${g.ident} toevoegen aan LARA`
-                      }
-                      onClick={() => wissel([g.id], !g.inLara)}
+                      className={`${styles.pick} ${aangevinkt.has(g.id) ? styles.pickAan : ""}`}
+                      aria-pressed={aangevinkt.has(g.id)}
+                      aria-label={`${g.ident} aanvinken`}
+                      onClick={() => vinkAan(g.id)}
                     />
                   </td>
                   <td className="ident">{g.ident}</td>
@@ -211,11 +270,20 @@ export default function GebiedenLijst({
                       )}
                     </span>
                   </td>
+                  <td>
+                    {g.inLara ? (
+                      <span className="badge badgeOk">
+                        {g.laraAreaId !== null ? `LARA ${g.laraAreaId}` : "in LARA"}
+                      </span>
+                    ) : (
+                      <span className="dim">—</span>
+                    )}
+                  </td>
                 </tr>
               ))}
               {!zichtbaar.length && (
                 <tr>
-                  <td colSpan={8} className={styles.leeg}>
+                  <td colSpan={9} className={styles.leeg}>
                     {gebieden.length
                       ? "Geen gebieden die aan de filters voldoen."
                       : "Deze dataset bevat geen gebieden."}

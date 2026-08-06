@@ -95,7 +95,13 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Alles behalve statische bestanden, fonts en afbeeldingen.
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2)$).*)",
+    // Alles behalve statische bestanden.
+    //
+    // Let op de extensies: een verzoek dat hier wél doorheen gaat en geen sessie
+    // heeft, wordt naar /inloggen gestuurd — en dat levert HTML op. Voor een
+    // script betekent dat "non-JavaScript MIME type of text/html" en weigert de
+    // browser het. Zo verdween de kaart: de MapLibre-worker (.mjs) viel buiten
+    // de uitzonderingen.
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:mjs|js|css|map|json|svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)",
   ],
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Map as MapLibreMap, LngLatBounds, NavigationControl } from "maplibre-gl";
+import { Map as MapLibreMap, LngLatBounds, NavigationControl, setWorkerUrl } from "maplibre-gl";
 import type { Feature, Geometry } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
 import styles from "./detail.module.css";
@@ -16,6 +16,17 @@ import styles from "./detail.module.css";
  */
 
 const BRON = "gebied";
+
+/**
+ * MapLibre draait het zware werk in een web worker en laadt die met een URL die
+ * de bundler invult. Turbopack laat dat bestand buiten de build, waardoor de
+ * browser een 404-pagina terugkrijgt en weigert die als module uit te voeren:
+ * "non-JavaScript MIME type of text/html".
+ *
+ * De worker staat daarom als gewoon bestand in public/, neergezet door
+ * scripts/kopieer-maplibre-worker.mjs bij elke install en build.
+ */
+setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
 /** Alle punten van een geometrie, ongeacht of het een Polygon of MultiPolygon is. */
 function allePunten(geometrie: Geometry): [number, number][] {

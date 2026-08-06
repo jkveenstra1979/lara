@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { toonDatumTijd } from "@/lib/datum";
 import type { ImportSamenvatting } from "@/lib/aixmImport";
+import type { OvernameResultaat } from "@/lib/overnemen";
 import styles from "./page.module.css";
 
 type Fase = "leeg" | "uploaden" | "verwerken" | "klaar" | "fout";
@@ -26,6 +27,7 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
   const [fase, setFase] = useState<Fase>("leeg");
   const [fout, setFout] = useState<string | null>(null);
   const [samenvatting, setSamenvatting] = useState<ImportSamenvatting | null>(null);
+  const [overname, setOvername] = useState<OvernameResultaat | null>(null);
   const [sleep, setSleep] = useState(false);
   const invoer = useRef<HTMLInputElement>(null);
 
@@ -48,6 +50,7 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
     if (!bestand || !airacGeldig) return;
     setFout(null);
     setSamenvatting(null);
+    setOvername(null);
     setFase("uploaden");
 
     try {
@@ -85,7 +88,7 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
 
       // Een platform-fout (413, 504) komt niet als JSON terug.
       const tekst = await res.text();
-      let data: { error?: string; samenvatting?: ImportSamenvatting } = {};
+      let data: { error?: string; samenvatting?: ImportSamenvatting; overname?: OvernameResultaat | null } = {};
       try {
         data = JSON.parse(tekst);
       } catch {
@@ -98,6 +101,7 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
 
       if (!res.ok) throw new Error(data.error ?? "De import is mislukt.");
       setSamenvatting(data.samenvatting as ImportSamenvatting);
+      setOvername(data.overname ?? null);
       setFase("klaar");
     } catch (error) {
       setFout(error instanceof Error ? error.message : "De import is mislukt.");
@@ -278,6 +282,30 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
                       {samenvatting.geobordersUitTabel > 0
                         ? `, ${samenvatting.geobordersUitTabel} al bekend).`
                         : ")."}
+                    </span>
+                  </div>
+                )}
+
+                {overname && (
+                  <div className={`${styles.melding} ${styles.meldingOk}`}>
+                    <span className={styles.teken}>→</span>
+                    <span>
+                      De LARA-lijst is overgenomen van{" "}
+                      <span className="mono">{overname.bronFilename}</span> (AIRAC{" "}
+                      {overname.bronAirac}): <strong>{overname.overgenomen} gebieden</strong> met
+                      hun Area ID.
+                      {overname.vervallen.length > 0 && (
+                        <>
+                          {" "}
+                          <strong>{overname.vervallen.length} vervallen</strong> — die designators
+                          komen niet meer voor in dit bestand:{" "}
+                          {overname.vervallen
+                            .slice(0, 8)
+                            .map((v) => `${v.ident}${v.laraAreaId ? ` (${v.laraAreaId})` : ""}`)
+                            .join(", ")}
+                          {overname.vervallen.length > 8 ? " …" : ""}. Hun nummers zijn vrij.
+                        </>
+                      )}
                     </span>
                   </div>
                 )}

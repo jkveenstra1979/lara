@@ -50,3 +50,6 @@ supabase/.temp/
 # gebiedsgegevens, een AIXM-snapshot van 112 MB en correspondentie. Blijft
 # lokaal; docs/HANDOVER.md en docs/TESTPLAN.md verwijzen ernaar met bestandsnaam.
 documents/
+
+# Kopie van de MapLibre-worker; wordt bij install en build neergezet.
+/public/maplibre/
