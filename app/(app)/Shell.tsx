@@ -29,12 +29,14 @@ export type ShellDataset = {
 export default function Shell({
   children,
   email,
+  rol,
   actief,
   aantalDatasets,
   inLara,
 }: {
   children: React.ReactNode;
   email: string;
+  rol: "admin" | "user";
   actief: ShellDataset | null;
   aantalDatasets: number;
   inLara: number;
@@ -91,10 +93,23 @@ export default function Shell({
           </Link>
         </div>
 
+        {rol === "admin" && (
+          <div className={styles.groep}>
+            <span className={`sectionLabel ${styles.groepLabel}`}>Beheer</span>
+            <Link
+              href="/beheer/gebruikers"
+              className={`${styles.item} ${pad === "/beheer/gebruikers" ? styles.itemActief : ""}`}
+            >
+              Gebruikers
+            </Link>
+          </div>
+        )}
+
         <span className="spacer" />
 
         <div className={styles.railVoet}>
           <span className={styles.gebruiker}>{email}</span>
+          <span className={styles.rol}>{rol === "admin" ? "beheerder" : "gebruiker"}</span>
         </div>
       </nav>
 

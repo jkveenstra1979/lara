@@ -13,7 +13,7 @@ import { supabaseIsIngesteld } from "@/lib/supabase/config";
  * Zonder dat laatste verloopt de sessie tijdens gebruik.
  */
 
-const PUBLIEKE_PADEN = ["/inloggen", "/auth"];
+const PUBLIEKE_PADEN = ["/inloggen", "/auth", "/uitnodiging"];
 
 export async function proxy(request: NextRequest) {
   // Nog geen Supabase-project: alles doorlaten, de startpagina legt uit wat mist.

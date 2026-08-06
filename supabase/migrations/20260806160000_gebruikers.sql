@@ -104,3 +104,46 @@ grant select, update on public.gebruikers to authenticated;
 
 comment on table public.gebruikers is
   'Profiel bij een account in auth.users. Twee rollen: admin beheert gebruikers, user niet. Aan de luchtruimgegevens mag iedereen evenveel doen.';
+
+-- ------------------------------------------------------------ uitnodigen ----
+
+-- Uitnodigen zonder e-mailserver: de beheerder maakt een uitnodiging aan en
+-- stuurt de link zelf door. Patroon overgenomen uit AeroDB-Feature-Handbook,
+-- waar dezelfde afweging speelde.
+--
+-- Het account ontstaat pas bij het accepteren. Een uitnodiging die blijft
+-- liggen levert dus geen half account op, en je ziet in de lijst wie er nog
+-- moet reageren.
+create table public.uitnodigingen (
+  id         uuid primary key default gen_random_uuid(),
+  email      text not null,
+  rol        public.gebruiker_rol not null default 'user',
+  naam       text,
+  -- 64 hex-tekens uit twee uuids. Niet te raden, en anders dan
+  -- gen_random_bytes() heeft dit geen pgcrypto nodig — gen_random_uuid() zit
+  -- sinds Postgres 13 in de kern, dus de migratie draait overal gelijk.
+  token      text not null unique
+             default replace(gen_random_uuid()::text, '-', '') ||
+                     replace(gen_random_uuid()::text, '-', ''),
+  invited_by uuid references public.gebruikers (id) on delete set null,
+  expires_at timestamptz not null default (now() + interval '14 days'),
+  accepted_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index uitnodigingen_email_idx on public.uitnodigingen (email);
+create index uitnodigingen_token_idx on public.uitnodigingen (token);
+
+alter table public.uitnodigingen enable row level security;
+
+-- Alleen een beheerder ziet en beheert uitnodigingen. Het accepteren gebeurt
+-- met de service-role-sleutel, want de ontvanger is per definitie nog niet
+-- ingelogd — die kan hier dus niets.
+create policy "admin beheert uitnodigingen"
+  on public.uitnodigingen for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+grant select, insert, update, delete on public.uitnodigingen to authenticated;
+
+comment on table public.uitnodigingen is
+  'Uitnodiging met een token; de beheerder stuurt de link zelf door. Er is geen SMTP gekoppeld. Het account ontstaat pas bij accepteren.';

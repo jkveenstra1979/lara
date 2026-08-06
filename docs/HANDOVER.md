@@ -36,7 +36,8 @@ Alles wat in de brontool om de LARA-stroom heen is gegroeid gaat **niet** mee: o
 |---|---|---|
 | Accentkleur | **Indigo `#3f3d8f`** (dark: `#8b88e0`) | Ter onderscheid van AIP Check, dat teal `#0f6470` gebruikt |
 | Opslag | **Eigen Supabase-project** | Nieuw project, niet dat van de brontool |
-| Toegang | **Supabase Auth, e-mail + wachtwoord** | Zonder rollenstelsel en zonder goedkeuringsstroom |
+| Toegang | **Supabase Auth, e-mail + wachtwoord** | Twee rollen: `admin` beheert gebruikers, `user` niet. Aan de gegevens mag iedereen evenveel doen |
+| Uitnodigen | **Link die de beheerder zelf doorstuurt** | Geen SMTP gekoppeld. Patroon overgenomen uit AeroDB-Feature-Handbook |
 | Framework | **Next.js 16, App Router, React 19** | Zelfde stack als brontool en AIP Check |
 | Styling | **CSS Modules + tokenbestand** | Géén Tailwind — de brontool gebruikt Tailwind, hier volgen we AIP Check |
 | Fonts | **IBM Plex Sans / Mono, lokaal ingesloten** | Geen externe verzoeken |
@@ -109,7 +110,7 @@ Twee kolommen zijn tijdens het bouwen toegevoegd, beide omdat de mockup ze vraag
 
 Verder afgedwongen in de database, niet in de applicatie: `status` en `operation` als check-constraint, `lara_area_id > 0`, uniek `(dataset_id, lara_area_id)` (meerdere `null`s botsen niet, dus ongenummerde selecties staan naast elkaar), uniek `airspace_id` (een gebied staat hoogstens één keer in de lijst), en een trigger op `updated_at`.
 
-RLS: elke ingelogde gebruiker leest en schrijft alles. Geen rollen — dat was een expliciete keuze. Wat RLS hier wél doet is niet-ingelogde verzoeken tegenhouden: zonder policies leest de anon key uit een publieke build de hele tabel uit.
+RLS: elke ingelogde gebruiker leest en schrijft alles aan luchtruimgegevens. Wat RLS hier wél doet is niet-ingelogde verzoeken tegenhouden: zonder policies leest de anon key uit een publieke build de hele tabel uit.
 
 **Overnemen van selectie en nummering.** Bij een nieuwe AIXM-import moeten zowel de selectie als de LARA IDs van de vorige dataset mee kunnen verhuizen, door te matchen op `ident`. Dat is precies wat `parseBulkList` in de brontool al doet, maar dan automatisch. Bouw dit als knop "Neem over van dataset X" op het importscherm en op scherm 3; zonder dat moet je na elke AIRAC-cyclus 42 gebieden opnieuw aanvinken en nummeren.
 

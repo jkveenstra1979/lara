@@ -95,3 +95,65 @@ export function isLaatsteAdmin(gebruikers: Gebruiker[], id: string): boolean {
   const admins = gebruikers.filter((g) => g.rol === "admin");
   return admins.length === 1 && admins[0].id === id;
 }
+
+/* ------------------------------------------------------------ uitnodigen ---- */
+
+export type Uitnodiging = {
+  id: string;
+  email: string;
+  naam: string | null;
+  rol: Rol;
+  token: string;
+  createdAt: string;
+  expiresAt: string;
+  acceptedAt: string | null;
+  /** Verlopen én nog niet geaccepteerd. */
+  verlopen: boolean;
+};
+
+type UitnodigingRij = {
+  id: string;
+  email: string;
+  naam: string | null;
+  rol: Rol;
+  token: string;
+  created_at: string;
+  expires_at: string;
+  accepted_at: string | null;
+};
+
+/** Openstaande uitnodigingen: nog niet geaccepteerd, nieuwste eerst. */
+export async function haalUitnodigingen(
+  supabase: SupabaseClient<Database>
+): Promise<{ uitnodigingen: Uitnodiging[]; error: string | null }> {
+  const { data, error } = await supabase
+    .from("uitnodigingen")
+    .select("id, email, naam, rol, token, created_at, expires_at, accepted_at")
+    .is("accepted_at", null)
+    .order("created_at", { ascending: false });
+
+  if (error) return { uitnodigingen: [], error: error.message };
+
+  const nu = Date.now();
+  return {
+    uitnodigingen: ((data ?? []) as unknown as UitnodigingRij[]).map((r) => ({
+      id: r.id,
+      email: r.email,
+      naam: r.naam,
+      rol: r.rol,
+      token: r.token,
+      createdAt: r.created_at,
+      expiresAt: r.expires_at,
+      acceptedAt: r.accepted_at,
+      verlopen: new Date(r.expires_at).getTime() < nu,
+    })),
+    error: null,
+  };
+}
+
+/** De link die de beheerder doorstuurt. */
+export function uitnodigingsLink(origin: string, token: string): string {
+  const url = new URL("/uitnodiging", origin);
+  url.searchParams.set("token", token);
+  return url.toString();
+}

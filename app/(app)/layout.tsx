@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { huidigeGebruiker } from "@/lib/gebruikers";
 import Shell, { type ShellDataset } from "./Shell";
 
 /**
@@ -13,10 +14,8 @@ import Shell, { type ShellDataset } from "./Shell";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/inloggen");
+  const ik = await huidigeGebruiker(supabase);
+  if (!ik) redirect("/inloggen");
 
   const { data: datasets } = await supabase
     .from("datasets")
@@ -48,7 +47,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <Shell
-      email={user.email ?? ""}
+      email={ik.email}
+      rol={ik.rol}
       actief={actief}
       aantalDatasets={alle.length}
       inLara={inLara}

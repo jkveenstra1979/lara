@@ -40,20 +40,32 @@ draaien. Hij controleert de dingen die je anders pas merkt als er data in zit:
 bestaan de tabellen mét de kolommen uit de migratie, houdt RLS `anon` buiten de
 deur, staat de bucket privé, en zijn er gebruikers.
 
-Een gebruiker aanmaken — er is geen registratieformulier, dus dit is de manier:
+### Gebruikers
+
+Twee rollen, één verschil: een **beheerder** nodigt uit en wijzigt rollen, een
+**gebruiker** niet. Aan de luchtruimgegevens mag iedereen die is ingelogd
+evenveel doen.
+
+Uitnodigen gaat via **Beheer → Gebruikers**. Er is geen e-mailserver gekoppeld:
+de applicatie maakt een link die je zelf doorstuurt. Die is veertien dagen geldig
+en werkt één keer; verlopen links vervang je met één knop.
+
+De eerste beheerder is het oudste account — dat wordt bij de migratie gezet.
+Zonder account kom je er met:
 
 ```
 npm run gebruiker -- jan@example.nl
 ```
 
-Zonder wachtwoord genereert het script er één en toont hem eenmalig.
+### Openstaande migraties
 
-### Openstaande migratie
+Twee stuks:
 
-`20260806140000_nummers_omwisselen.sql` moet nog uitgevoerd worden. Hij maakt de
-unique constraint op `(dataset_id, lara_area_id)` uitstelbaar. Zonder deze
-migratie loopt het omwisselen van twee Area IDs stuk — de tussenstand botst,
-terwijl de einduitkomst geldig is.
+- `20260806140000_nummers_omwisselen.sql` — maakt de unique constraint op
+  `(dataset_id, lara_area_id)` uitstelbaar. Zonder deze migratie loopt het
+  omwisselen van twee Area IDs stuk.
+- `20260806160000_gebruikers.sql` — gebruikers, rollen en uitnodigingen. Zet het
+  oudste account op `admin`.
 
 ### Bij een schemawijziging
 

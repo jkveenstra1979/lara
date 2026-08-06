@@ -234,3 +234,10 @@
   border-top: 1px solid var(--rule);
   flex-shrink: 0;
 }
+
+.rol {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+}

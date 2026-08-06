@@ -303,6 +303,51 @@ export type Database = {
         Relationships: [];
       };
 
+      uitnodigingen: {
+        Row: {
+          id: string;
+          email: string;
+          rol: "admin" | "user";
+          naam: string | null;
+          token: string;
+          invited_by: string | null;
+          expires_at: string;
+          accepted_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          rol?: "admin" | "user";
+          naam?: string | null;
+          token?: string;
+          invited_by?: string | null;
+          expires_at?: string;
+          accepted_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          rol?: "admin" | "user";
+          naam?: string | null;
+          token?: string;
+          invited_by?: string | null;
+          expires_at?: string;
+          accepted_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "uitnodigingen_invited_by_fkey";
+            columns: ["invited_by"];
+            isOneToOne: false;
+            referencedRelation: "gebruikers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+
       geoborders: {
         Row: {
           id: string;
