@@ -204,7 +204,29 @@ Regels:
 4. Sheet 1 houdt één rij per gebied, met de omhullende hoogteband — `envelopeVerticalLimits`, dat over eenheden heen vergelijkt maar de originele eenheid teruggeeft.
 5. Gebieden met meer dan één volume krijgen een badge in de lijst en een regel in de bevindingen.
 
-### 5.5 Gebieden die hun vorm lenen
+### 5.5 Bogen en landsgrenzen in de vorm
+
+`parseAixm` levert per volume een GeoJSON met alleen de **ankerpunten**: een boog
+blijft één punt en een landsgrens één rechte lijn. Voor EHWO — een CTR met een
+boog van 8 NM en een stuk Belgisch-Nederlandse grens — geeft dat een polygoon van
+vijf punten waar er 121 horen.
+
+Dat is niet alleen op de kaart te zien. `formatGeometryForLARA` leest dezelfde
+vorm, dus de kolom `Coordinates` zou net zo grof zijn: vijf coördinaten voor een
+gebied dat er 121 nodig heeft.
+
+De geometrietekst bevat wél alles — `ARC(51.449,4.342,8,CW,…)` en
+`BORDER(uuid,…)`. `geometryStringToMultiPolygon` uit
+[`lib/airspaceGeometryTransitive.ts`](../lib/airspaceGeometryTransitive.ts)
+(overgenomen uit de brontool) zet die om naar een ring met de boog geïnterpoleerd
+en de grens gevolgd. De import gebruikt dat nu voor élk volume én voor de
+samenvoegrij — die laatste wordt geleend door gebieden die ernaar verwijzen, dus
+die moet net zo compleet zijn.
+
+In het bestand van 3 september raakt dit **109 volumes met een boog** en **107 met
+een grens**. EHBK2 gaat van een handvol punten naar 1354.
+
+### 5.6 Gebieden die hun vorm lenen
 
 AIXM laat een airspace naar een andere verwijzen in plaats van eigen coördinaten op te schrijven: EHR4A is "EHR4, maar dan deze hoogteband". Zo'n volume heeft `derived_from` gevuld en `geojson` leeg.
 
@@ -214,7 +236,7 @@ In het bestand van 3 september 2026 raakt dat **11 van de 100** reserveerbare ge
 
 Dat is de eenvoudige variant van `resolveTransitiveGeometries` uit de brontool, die een `time_slices_json` verwacht die wij niet hebben. Voor een verwijzing die zelf weer doorverwijst is dit niet genoeg — dan blijft de vorm leeg en verschijnt er een bevinding.
 
-### 5.6 Bestandsnaam
+### 5.7 Bestandsnaam
 
 `LARAV4_<airac>_<datum>.xlsx`, bijvoorbeeld `LARAV4_2608_20260805.xlsx`. De AIRAC komt uit `datasets.airac`, de datum is de exportdatum. KML en GeoJSON volgen hetzelfde patroon.
 

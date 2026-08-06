@@ -21,6 +21,7 @@ import { parseAixm, type GeoBorderLookup, type ParsedAirspace } from "./aixmPars
 import { buildXmlSnippetIndex } from "./xmlSnippetIndex";
 import { extractGeoborders, normalizeUuid, type Geoborder } from "./geoborderExtract";
 import { collectVolumes, envelopeVerticalLimits, heeftMeerdereVolumes, type Volume } from "./airspaceVolumes";
+import { geometryStringToMultiPolygon } from "./airspaceGeometryTransitive";
 import type { Database } from "./database.types";
 
 type AirspaceRij = Database["public"]["Tables"]["airspaces"]["Insert"] & { id: string };
@@ -80,6 +81,44 @@ const grensUuidsUit = (geometrieTekst: string | null | undefined): string[] => {
   }
   return uuids;
 };
+
+/**
+ * De volledige vorm uit de geometrietekst.
+ *
+ * `parseAixm` levert per volume een GeoJSON met alleen de ankerpunten: een boog
+ * blijft één punt en een landsgrens één rechte lijn. Voor EHWO — een CTR met een
+ * boog van 8 NM en een stuk Belgisch-Nederlandse grens — geeft dat een polygoon
+ * van 5 punten waar er 121 horen.
+ *
+ * Dat is niet alleen op de kaart te zien: `formatGeometryForLARA` leest dezelfde
+ * GeoJSON, dus de kolom `Coordinates` in de export zou net zo grof zijn.
+ *
+ * De geometrietekst bevat wél alles — `ARC(...)` en `BORDER(uuid,...)` — en
+ * `geometryStringToMultiPolygon` (overgenomen uit de brontool) zet die om naar
+ * een ring met de boog geïnterpoleerd en de grens gevolgd.
+ */
+function volledigeVorm(
+  geometrieTekst: string | null | undefined,
+  grensPunten: (uuid: string) => { lat: number; lon: number }[] | null
+): Feature<Geometry> | null {
+  if (!geometrieTekst) return null;
+  // Alleen de moeite waard als er iets te expanderen valt.
+  if (!/ARC\(|BORDER\(/.test(geometrieTekst)) return null;
+
+  try {
+    const mp = geometryStringToMultiPolygon(geometrieTekst, grensPunten);
+    if (!mp?.[0]?.[0]?.length) return null;
+    return {
+      type: "Feature",
+      properties: {},
+      geometry: { type: "Polygon", coordinates: mp[0] as unknown as number[][][] },
+    } as Feature<Geometry>;
+  } catch {
+    // Lukt het niet, dan blijft de vorm van de parser staan; die is grover maar
+    // beter dan niets, en de bevindingen melden de rest.
+    return null;
+  }
+}
 
 /**
  * Koppeling tussen een gebied en zijn XML-fragment.
@@ -147,6 +186,17 @@ export async function bouwImport(
     ...geoborders.map((g) => g.borderId),
     ...Object.keys(geobordersUitTabel),
   ]);
+
+  // Dezelfde grenzen, in de vorm die het opbouwen van een ring verwacht.
+  const grensPunten = new Map<string, { lat: number; lon: number }[]>();
+  for (const g of geoborders) {
+    grensPunten.set(g.borderId, g.coords.map(([lon, lat]) => ({ lat, lon })));
+  }
+  for (const [uuid, punten] of Object.entries(geobordersUitTabel)) {
+    if (grensPunten.has(uuid)) continue;
+    grensPunten.set(uuid, punten.map((p) => ({ lat: p[1], lon: p[0] })));
+  }
+  const zoekGrens = (uuid: string) => grensPunten.get(uuid) ?? null;
 
   const airspaceRijen: AirspaceRij[] = [];
   const geometrieRijen: GeometrieRij[] = [];
@@ -230,9 +280,12 @@ export async function bouwImport(
     // het gebied als geheel beschrijft, náást de volumes waaruit het bestaat.
     const aggregatie = slice?.aggregatedGeometry;
     if (aggregatie?.geojson) {
+      // Ook hier de volledige vorm: deze rij beschrijft het gebied als geheel en
+      // wordt geleend door gebieden die naar dit gebied verwijzen.
+      const aggVolledig = volledigeVorm(geometrieTekst, zoekGrens);
       geometrieRijen.push({
         airspace_id: airspaceId,
-        geojson: aggregatie.geojson as unknown as GeometrieRij["geojson"],
+        geojson: (aggVolledig ?? aggregatie.geojson) as unknown as GeometrieRij["geojson"],
         bbox: (aggregatie.bbox ?? null) as GeometrieRij["bbox"],
         geom_type: aggregatie.geomType ?? aggregatie.geojson.geometry?.type ?? null,
         operation: "AGG",
@@ -247,9 +300,15 @@ export async function bouwImport(
     }
 
     for (const volume of volumes) {
+      // De vorm uit de geometrietekst wint: die heeft de bogen en de grens.
+      const eigenTekst = slice?.geometryComponents.find(
+        (c) => c.geometryString && c.operationSequence === volume.operationSequence
+      )?.geometryString;
+      const vollediger = volledigeVorm(eigenTekst ?? geometrieTekst, zoekGrens);
+
       geometrieRijen.push({
         airspace_id: airspaceId,
-        geojson: (volume.geojson ?? null) as unknown as GeometrieRij["geojson"],
+        geojson: (vollediger ?? volume.geojson ?? null) as unknown as GeometrieRij["geojson"],
         bbox: (volume.bbox ?? null) as GeometrieRij["bbox"],
         geom_type: volume.geomType ?? volume.geojson?.geometry?.type ?? null,
         operation: volume.operation,
