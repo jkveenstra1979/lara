@@ -1,0 +1,98 @@
+/*
+ * Startpagina — voorlopig. Zodra scherm 1 er staat wordt dit een doorverwijzing
+ * naar de actieve dataset; nu bevestigt het dat tokens en fonts geladen zijn.
+ */
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 28px;
+}
+
+.card {
+  width: 100%;
+  max-width: 620px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 32px;
+}
+
+.wordmark {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.wordmark em {
+  font-style: normal;
+  color: var(--action);
+}
+
+.tagline {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+
+.head {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.steps {
+  list-style: none;
+  padding: 8px 0 20px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.stepNum {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--step-num);
+  height: var(--step-num);
+  border: 1px solid var(--rule-strong);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+
+.stepName {
+  font-size: 12.5px;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+
+/* Zichtbaar zolang .env.local ontbreekt — geen stacktrace maar een instructie. */
+.melding {
+  padding: 12px 14px;
+  background: var(--warn-wash);
+  border: 1px solid var(--warn);
+  color: var(--warn);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* .mono komt uit base.css en is dus globaal — zonder :global() zou de
+   CSS Module de klassenaam hashen en niets raken. */
+.melding :global(.mono) {
+  color: inherit;
+}

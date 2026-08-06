@@ -262,6 +262,31 @@ td.dim { color: var(--ink-3); }
 .idInputErr { border-color: var(--fout); }
 .rowErr { font-size: 10.5px; color: var(--fout); font-family: var(--mono); }
 
+/* selectievakje: gevuld = staat in de LARA-lijst */
+.pick {
+  width: 15px; height: 15px; border: 1px solid var(--rule-strong); background: var(--surface);
+  cursor: pointer; padding: 0; display: block;
+}
+.pick:hover { border-color: var(--ink); }
+.pickOn { background: var(--action); border-color: var(--action); position: relative; }
+.pickOn::after {
+  content: "✓"; position: absolute; inset: 0; color: #fff; font-size: 10px;
+  line-height: 13px; text-align: center; font-weight: 600;
+}
+td.pickCell { width: 34px; padding-left: 14px; }
+
+/* volumekiezer in het detailpaneel */
+.volBar {
+  display: flex; align-items: center; gap: 8px; padding: 8px 18px;
+  background: var(--action-wash); border-bottom: 1px solid var(--rule);
+}
+.volChip {
+  height: 22px; padding: 0 9px; font-family: var(--mono); font-size: 10.5px;
+  border: 1px solid var(--rule-strong); background: var(--surface); color: var(--ink-2); cursor: pointer;
+}
+.volChipOn { border-color: var(--action); color: var(--action); font-weight: 600; background: var(--surface); }
+.volSrc { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
+
 .detailPane { width: 460px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--surface); }
 .detailHead { padding: 14px 18px; border-bottom: 1px solid var(--rule); }
 .detailIdent { font-family: var(--mono); font-size: 15px; font-weight: 600; }
@@ -300,7 +325,24 @@ pre.xml {
 .xml .v { color: var(--ok); }
 .detailFoot { display: flex; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--rule); flex-shrink: 0; }
 
-/* scherm 3 — export */
+/* scherm 3 — LARA-selectie */
+.statStrip { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--rule); background: var(--surface); flex-shrink: 0; }
+.statCell { padding: 10px 16px; border-right: 1px solid var(--rule); }
+.statCell:last-child { border-right: none; }
+.statNum { font-family: var(--mono); font-size: 17px; font-weight: 600; line-height: 1.15; }
+.statNum.warnNum { color: var(--warn); }
+.statLabel { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin-top: 2px; }
+.selPane { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.noteCell { font-size: 11.5px; color: var(--ink-3); font-style: italic; }
+.rowDrop { border: none; background: none; font-family: var(--mono); font-size: 13px; color: var(--ink-3); cursor: pointer; padding: 0 4px; }
+.rowDrop:hover { color: var(--fout); }
+.inheritBar {
+  display: flex; align-items: center; gap: 10px; padding: 9px 16px;
+  background: var(--action-wash); border: 1px solid var(--action-hl); font-size: 12.5px;
+}
+.inheritTally { display: flex; gap: 14px; font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
+
+/* scherm 4 — export */
 .exportGrid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; align-items: start; }
 .panel { border: 1px solid var(--rule); background: var(--surface); }
 .panelHead { padding: 11px 16px; border-bottom: 1px solid var(--rule); background: var(--surface-sub); display: flex; align-items: center; gap: 10px; }
@@ -339,7 +381,8 @@ pre.xml {
       <span class="sectionLabel groupLabel">Werkstroom</span>
       <button class="item" data-goto="1">Importeren</button>
       <button class="item itemActive" data-goto="2">Gebieden<span class="count">187</span></button>
-      <button class="item" data-goto="3">Exporteren<span class="count">42</span></button>
+      <button class="item" data-goto="3">LARA-selectie<span class="count">42</span></button>
+      <button class="item" data-goto="4">Exporteren<span class="count">42</span></button>
     </div>
 
     <div class="group">
@@ -376,7 +419,7 @@ pre.xml {
       <span class="position">AIRAC 2608 · geïmporteerd 05-08-2026 09:14</span>
       <div class="spacer"></div>
       <span class="mockNote">mockup</span>
-      <span class="badge badgeOk" id="sessBadge">42 van 187 genummerd</span>
+      <span class="badge badgeWarn" id="sessBadge">42 in LARA · 3 zonder ID</span>
     </header>
 
     <nav class="stepBar" aria-label="Werkstroom">
@@ -385,11 +428,15 @@ pre.xml {
         <span class="stepRule"></span>
       </div>
       <div class="stepWrap">
-        <button class="step" data-goto="2"><span class="stepNum" data-num="2">2</span><span class="stepLabel" data-lab="2">Gebieden &amp; LARA ID</span></button>
+        <button class="step" data-goto="2"><span class="stepNum" data-num="2">2</span><span class="stepLabel" data-lab="2">Gebieden</span></button>
         <span class="stepRule"></span>
       </div>
       <div class="stepWrap">
-        <button class="step" data-goto="3"><span class="stepNum" data-num="3">3</span><span class="stepLabel" data-lab="3">Exporteren</span></button>
+        <button class="step" data-goto="3"><span class="stepNum" data-num="3">3</span><span class="stepLabel" data-lab="3">LARA-selectie</span></button>
+        <span class="stepRule"></span>
+      </div>
+      <div class="stepWrap">
+        <button class="step" data-goto="4"><span class="stepNum" data-num="4">4</span><span class="stepLabel" data-lab="4">Exporteren</span></button>
       </div>
     </nav>
 
@@ -403,11 +450,30 @@ pre.xml {
             <span class="rule"></span>
             <span class="meta">AIXM 5.1 · .xml · max 200 MB</span>
           </div>
-          <div style="padding-top:14px">
+          <div style="padding-top:14px;display:flex;flex-direction:column;gap:14px">
             <div class="drop">
               <strong>Sleep het AIXM-bestand hierheen</strong>
               <div class="dropHint">of <a href="#">kies een bestand</a> — het bestand wordt bewaard zodat de import later herhaald kan worden</div>
               <button class="btn btnPrimary">Bestand kiezen</button>
+            </div>
+
+            <div style="display:flex;gap:18px;align-items:flex-end">
+              <div style="width:150px">
+                <label class="field" for="airacFld">AIRAC-cyclus <span style="color:var(--fout)">·</span> verplicht</label>
+                <input id="airacFld" class="monoField" type="text" value="2608" placeholder="jjcc">
+              </div>
+              <div style="width:220px">
+                <label class="field" for="inhFld">Neem selectie over van</label>
+                <select id="inhFld">
+                  <option>EHAA_AIXM51_2607.xml — 42</option>
+                  <option>EHAA_AIXM51_2606.xml — 40</option>
+                  <option>niet overnemen</option>
+                </select>
+              </div>
+              <p class="lead" style="font-size:12px;padding-bottom:8px">
+                De cyclus wordt niet uit de bestandsnaam afgeleid; hij bepaalt de naam van het exportbestand
+                (<span class="mono">LARAV4_2608_20260805.xlsx</span>).
+              </p>
             </div>
           </div>
         </section>
@@ -420,11 +486,12 @@ pre.xml {
           </div>
           <div style="padding-top:14px;display:flex;flex-direction:column;gap:14px">
             <div class="progressTrack"><div class="progressFill" style="width:100%"></div></div>
-            <div class="resultGrid">
+            <div class="resultGrid" style="grid-template-columns:repeat(5,1fr)">
               <div class="resultCell"><div class="resultNum">187</div><div class="resultLabel">Airspaces</div></div>
               <div class="resultCell"><div class="resultNum">174</div><div class="resultLabel">Met geometrie</div></div>
               <div class="resultCell"><div class="resultNum warnNum">13</div><div class="resultLabel">Onopgelost</div></div>
               <div class="resultCell"><div class="resultNum">14</div><div class="resultLabel">Geoborders</div></div>
+              <div class="resultCell"><div class="resultNum">9</div><div class="resultLabel">Meerdere volumes</div></div>
             </div>
             <div class="noteBar">
               <span style="font-family:var(--mono);font-weight:600">!</span>
@@ -433,6 +500,17 @@ pre.xml {
                 LARA-export tot de bijbehorende geoborder is geladen. <a href="#">Toon de 13 gebieden</a> ·
                 <a href="#">Geoborders uploaden</a>
               </span>
+            </div>
+            <div class="inheritBar">
+              <span style="font-family:var(--mono);font-weight:600;color:var(--action)">→</span>
+              <span>Selectie overgenomen van <span class="mono">EHAA_AIXM51_2607.xml</span>.</span>
+              <div class="spacer"></div>
+              <div class="inheritTally">
+                <span>40 overgenomen</span>
+                <span style="color:var(--fout)">2 vervallen</span>
+                <span style="color:var(--warn)">4 nieuw</span>
+              </div>
+              <button class="btn btnSmall" data-goto="3">Nalopen</button>
             </div>
           </div>
         </section>
@@ -444,7 +522,7 @@ pre.xml {
           </div>
           <div style="padding-top:14px;border:1px solid var(--rule)">
             <table>
-              <thead><tr><th>Bestand</th><th>AIRAC</th><th>Geïmporteerd</th><th class="numeric">Airspaces</th><th class="numeric">LARA IDs</th><th></th></tr></thead>
+              <thead><tr><th>Bestand</th><th>AIRAC</th><th>Geïmporteerd</th><th class="numeric">Airspaces</th><th class="numeric">In LARA</th><th></th></tr></thead>
               <tbody>
                 <tr data-selected="true"><td class="ident">EHAA_AIXM51_2608.xml</td><td>2608</td><td class="dim">05-08-2026 09:14</td><td class="numeric">187</td><td class="numeric">42</td><td><span class="badge badgeOk">actief</span></td></tr>
                 <tr><td class="ident">EHAA_AIXM51_2607.xml</td><td>2607</td><td class="dim">08-07-2026 11:02</td><td class="numeric">185</td><td class="numeric">42</td><td><button class="btn btnSmall">Activeren</button></td></tr>
@@ -468,24 +546,24 @@ pre.xml {
               <input type="search" placeholder="Designator of naam…" value="">
               <select><option>Alle types</option><option>R — Restricted</option><option>D — Danger</option><option>TRA</option><option>TSA</option><option>CTR</option></select>
               <select><option>Alle klassen</option><option>C</option><option>D</option><option>E</option><option>G</option></select>
-              <label class="chk"><input type="checkbox" checked style="width:auto;height:auto"> Alleen met LARA ID</label>
+              <select><option>Alle gebieden</option><option>Alleen in LARA</option><option>Alleen nog niet in LARA</option></select>
               <div class="spacer"></div>
-              <button class="btn btnSmall">Lijst plakken…</button>
-              <button class="btn btnSmall">Hernummeren</button>
+              <span class="meta" id="pickTally">3 aangevinkt</span>
+              <button class="btn btnSmall btnPrimary" data-goto="3">Toevoegen aan LARA</button>
             </div>
 
             <div class="tableScroll">
               <table>
                 <thead>
                   <tr>
-                    <th style="width:96px">LARA ID ⇅</th>
-                    <th style="width:104px">Designator</th>
+                    <th class="pickCell" title="In de LARA-lijst">✓</th>
+                    <th style="width:104px">Designator ⇅</th>
                     <th>Naam</th>
                     <th style="width:56px">Type</th>
                     <th style="width:56px">Class</th>
                     <th style="width:78px">Onder</th>
                     <th style="width:78px">Boven</th>
-                    <th style="width:92px">Geometrie</th>
+                    <th style="width:104px">Geometrie</th>
                   </tr>
                 </thead>
                 <tbody id="rows">
@@ -499,21 +577,30 @@ pre.xml {
           <aside class="detailPane">
             <div class="detailHead">
               <div style="display:flex;align-items:baseline;gap:10px">
-                <span class="detailIdent">EHR4A</span>
-                <span class="badge badgeOk">LARA 3</span>
+                <span class="detailIdent">EHTRA10</span>
+                <span class="badge badgeOk">LARA 7</span>
                 <div class="spacer"></div>
-                <span class="meta">3 / 187</span>
+                <span class="meta">7 / 187</span>
               </div>
-              <div class="detailName">Amsterdam Terminal Area — restricted area Volkel</div>
+              <div class="detailName">TRA 10 Noordzee — afgeleid gebied, 3 hoogtebanden</div>
 
               <div class="detailFacts">
-                <div class="fact"><span class="factKey">Type</span><span class="factVal">R</span></div>
-                <div class="fact"><span class="factKey">Class</span><span class="factVal">—</span></div>
-                <div class="fact"><span class="factKey">Onder</span><span class="factVal">GND</span></div>
-                <div class="fact"><span class="factKey">Boven</span><span class="factVal">FL 065</span></div>
-                <div class="fact"><span class="factKey">Volume</span><span class="factVal">Straight Lines</span></div>
-                <div class="fact"><span class="factKey">Punten</span><span class="factVal">28</span></div>
+                <div class="fact"><span class="factKey">Type</span><span class="factVal">TRA</span></div>
+                <div class="fact"><span class="factKey">Class</span><span class="factVal">C</span></div>
+                <div class="fact"><span class="factKey">Onder</span><span class="factVal">FL 055</span></div>
+                <div class="fact"><span class="factKey">Boven</span><span class="factVal">FL 195</span></div>
+                <div class="fact"><span class="factKey">Geometrie</span><span class="factVal">Straight Lines</span></div>
+                <div class="fact"><span class="factKey">Volumes</span><span class="factVal">3</span></div>
               </div>
+            </div>
+
+            <div class="volBar">
+              <span class="sectionLabel">Volume</span>
+              <button class="volChip volChipOn">1 · FL 055–095</button>
+              <button class="volChip">2 · FL 095–145</button>
+              <button class="volChip">3 · FL 145–195</button>
+              <div class="spacer"></div>
+              <span class="volSrc">BASE · eigen geometrie</span>
             </div>
 
             <div class="tabs">
@@ -540,7 +627,8 @@ pre.xml {
                       <circle cx="315" cy="235" r="2.6"/><circle cx="265" cy="290" r="2.6"/><circle cx="180" cy="285" r="2.6"/>
                       <circle cx="140" cy="225" r="2.6"/>
                     </g>
-                    <text x="228" y="212" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" font-weight="600" fill="var(--action)">EHR4A</text>
+                    <text x="228" y="206" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" font-weight="600" fill="var(--action)">EHTRA10</text>
+                    <text x="228" y="222" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="var(--action)">volume 1 · FL 055–095</text>
                   </svg>
                   <div class="mapMeta">
                     <span>52°15′38″N 005°42′11″E</span>
@@ -553,7 +641,7 @@ pre.xml {
 
               <div class="tabPane" data-pane="coord">
                 <div class="coordNote">
-                  Precies de reeks die in kolom <span class="mono">Coordinates</span> van sheet <span class="mono">Area Volumes</span> terechtkomt. Bogen zijn geïnterpoleerd; het eerste punt wordt aan het eind herhaald.
+                  Precies de reeks die in kolom <span class="mono">Coordinates</span> van sheet <span class="mono">Area Volumes</span> terechtkomt — voor <strong>volume 1</strong>, dat is één van de drie rijen die dit gebied in die sheet krijgt. Bogen zijn geïnterpoleerd; het eerste punt wordt aan het eind herhaald.
                 </div>
                 <ul class="coordList">
                   <li><span class="coordIdx">1</span><span>52°31′48″N,005°18′55″E</span></li>
@@ -584,16 +672,29 @@ pre.xml {
         &lt;/<span class="t">gml:TimePeriod</span>&gt;
       &lt;/<span class="t">gml:validTime</span>&gt;
       &lt;<span class="t">aixm:interpretation</span>&gt;BASELINE&lt;/<span class="t">aixm:interpretation</span>&gt;
-      &lt;<span class="t">aixm:type</span>&gt;R&lt;/<span class="t">aixm:type</span>&gt;
-      &lt;<span class="t">aixm:designator</span>&gt;EHR4A&lt;/<span class="t">aixm:designator</span>&gt;
-      &lt;<span class="t">aixm:name</span>&gt;VOLKEL&lt;/<span class="t">aixm:name</span>&gt;
+      &lt;<span class="t">aixm:type</span>&gt;TRA&lt;/<span class="t">aixm:type</span>&gt;
+      &lt;<span class="t">aixm:designator</span>&gt;EHTRA10&lt;/<span class="t">aixm:designator</span>&gt;
+      &lt;<span class="t">aixm:name</span>&gt;TRA 10 NOORDZEE&lt;/<span class="t">aixm:name</span>&gt;
+
+      <span class="a">&lt;!-- volume 1 — eigen geometrie --&gt;</span>
       &lt;<span class="t">aixm:geometryComponent</span>&gt;
         &lt;<span class="t">aixm:AirspaceGeometryComponent</span>&gt;
           &lt;<span class="t">aixm:operation</span>&gt;BASE&lt;/<span class="t">aixm:operation</span>&gt;
+          &lt;<span class="t">aixm:operationSequence</span>&gt;1&lt;/<span class="t">aixm:operationSequence</span>&gt;
           &lt;<span class="t">aixm:theAirspaceVolume</span>&gt;
             &lt;<span class="t">aixm:AirspaceVolume</span>&gt;
-              &lt;<span class="t">aixm:upperLimit</span> <span class="a">uom</span>=<span class="v">"FL"</span>&gt;065&lt;/<span class="t">aixm:upperLimit</span>&gt;
-              &lt;<span class="t">aixm:lowerLimit</span> <span class="a">uom</span>=<span class="v">"FT"</span>&gt;0&lt;/<span class="t">aixm:lowerLimit</span>&gt;
+              &lt;<span class="t">aixm:upperLimit</span> <span class="a">uom</span>=<span class="v">"FL"</span>&gt;095&lt;/<span class="t">aixm:upperLimit</span>&gt;
+              &lt;<span class="t">aixm:lowerLimit</span> <span class="a">uom</span>=<span class="v">"FL"</span>&gt;055&lt;/<span class="t">aixm:lowerLimit</span>&gt;
+              …
+
+      <span class="a">&lt;!-- volume 2 — verwijst naar EHTSA2, hoogteband komt daarvandaan --&gt;</span>
+      &lt;<span class="t">aixm:geometryComponent</span>&gt;
+        &lt;<span class="t">aixm:AirspaceGeometryComponent</span>&gt;
+          &lt;<span class="t">aixm:operation</span>&gt;UNION&lt;/<span class="t">aixm:operation</span>&gt;
+          &lt;<span class="t">aixm:operationSequence</span>&gt;2&lt;/<span class="t">aixm:operationSequence</span>&gt;
+          &lt;<span class="t">aixm:theAirspaceVolume</span>&gt;
+            &lt;<span class="t">aixm:AirspaceVolume</span>&gt;
+              &lt;<span class="t">aixm:contributorAirspace</span> <span class="a">xlink:href</span>=<span class="v">"urn:uuid:b41d…"</span>/&gt;
               …
 </pre>
               </div>
@@ -616,34 +717,96 @@ pre.xml {
 
     <!-- ======================================================= scherm 3 -->
     <div class="screen" data-screen="3">
+      <div class="workFlush">
+        <div class="selPane">
+
+          <div class="statStrip">
+            <div class="statCell"><div class="statNum">42</div><div class="statLabel">In de LARA-lijst</div></div>
+            <div class="statCell"><div class="statNum">39</div><div class="statLabel">Genummerd</div></div>
+            <div class="statCell"><div class="statNum warnNum">3</div><div class="statLabel">Zonder ID</div></div>
+            <div class="statCell"><div class="statNum warnNum">3</div><div class="statLabel">Gaten in de reeks</div></div>
+          </div>
+
+          <div class="inheritBar" style="border-left:none;border-right:none">
+            <span style="font-family:var(--mono);font-weight:600;color:var(--action)">→</span>
+            <span>Overgenomen van <span class="mono">EHAA_AIXM51_2607.xml</span>.</span>
+            <div class="inheritTally">
+              <span>40 overgenomen</span>
+              <span style="color:var(--fout)">2 vervallen</span>
+              <span style="color:var(--warn)">4 nieuw</span>
+            </div>
+            <div class="spacer"></div>
+            <button class="btn btnSmall">Vervallen gebieden tonen</button>
+            <button class="btn btnSmall">Opnieuw overnemen…</button>
+          </div>
+
+          <div class="filterBar">
+            <input type="search" placeholder="Designator of naam…" value="">
+            <select><option>Alle in de lijst</option><option>Alleen zonder ID</option><option>Alleen nieuw</option><option>Meerdere volumes</option></select>
+            <div class="spacer"></div>
+            <button class="btn btnSmall" data-goto="2">Gebieden toevoegen…</button>
+            <button class="btn btnSmall">Lijst plakken…</button>
+            <button class="btn btnSmall">Hernummeren</button>
+            <button class="btn btnSmall btnPrimary" data-goto="4">Naar export</button>
+          </div>
+
+          <div class="tableScroll">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:104px">LARA ID ⇅</th>
+                  <th style="width:104px">Designator</th>
+                  <th>Naam</th>
+                  <th style="width:56px">Type</th>
+                  <th style="width:78px">Onder</th>
+                  <th style="width:78px">Boven</th>
+                  <th style="width:180px">Notitie</th>
+                  <th style="width:40px"></th>
+                </tr>
+              </thead>
+              <tbody id="laraRows">
+                <!-- gevuld door script -->
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================= scherm 4 -->
+    <div class="screen" data-screen="4">
       <div class="work">
 
         <section>
           <div class="sectionHead">
             <span class="sectionLabel">01 · Controle vóór export</span>
             <span class="rule"></span>
-            <span class="meta">42 gebieden met LARA ID</span>
+            <span class="meta">42 gebieden in de LARA-lijst</span>
           </div>
           <div style="padding-top:14px">
             <div class="exportGrid">
 
               <div class="panel">
-                <div class="panelHead"><span class="sectionLabel">Bevindingen</span><div class="spacer"></div><span class="badge badgeWarn">2 aandachtspunten</span></div>
+                <div class="panelHead"><span class="sectionLabel">Bevindingen</span><div class="spacer"></div><span class="badge badgeFout">1 blokkeert · 4 aandachtspunten</span></div>
                 <div class="panelBody" style="padding-top:4px;padding-bottom:4px">
-                  <div class="checkRow"><span class="checkMark" style="color:var(--ok)">✓</span><span>Alle 42 gebieden hebben een unieke LARA Area ID.</span></div>
-                  <div class="checkRow"><span class="checkMark" style="color:var(--ok)">✓</span><span>41 gebieden hebben coördinaten (39 × <span class="mono">Straight Lines</span>, 2 × <span class="mono">Circle</span>).</span></div>
-                  <div class="checkRow"><span class="checkMark" style="color:var(--warn)">!</span><span><strong>EHD12</strong> (LARA 27) heeft geen opgeloste geometrie — de rij komt zonder coördinaten in de export. <a href="#">Bekijken</a></span></div>
+                  <div class="checkRow"><span class="checkMark" style="color:var(--fout)">✕</span><span><strong>3 gebieden staan in de lijst zonder LARA Area ID</strong> — EHD44, EHCTA1, EHTMA1. Ze komen wél in de export, maar zonder ID. <a href="#" data-goto="3">Nummeren</a></span></div>
+                  <div class="checkRow"><span class="checkMark" style="color:var(--ok)">✓</span><span>De 39 toegekende IDs zijn uniek.</span></div>
                   <div class="checkRow"><span class="checkMark" style="color:var(--warn)">!</span><span>Gat in de nummering: 14, 15 en 19 zijn niet toegekend. Dat mag, maar controleer of het bedoeld is.</span></div>
+                  <div class="checkRow"><span class="checkMark" style="color:var(--warn)">!</span><span><strong>EHD12</strong> (LARA 27) heeft geen opgeloste geometrie — geoborder ontbreekt, de rij komt zonder coördinaten in de export. <a href="#">Bekijken</a></span></div>
+                  <div class="checkRow"><span class="checkMark" style="color:var(--warn)">!</span><span>9 gebieden hebben meer dan één volume; sheet 2 krijgt daardoor <strong>61 rijen</strong> voor 42 gebieden. <a href="#">Tonen</a></span></div>
+                  <div class="checkRow"><span class="checkMark" style="color:var(--warn)">!</span><span>12 gebieden geven geen tijdvak op in AIXM — <span class="mono">MON–SUN 00:00–24:00</span> aangehouden. <a href="#">Tonen</a></span></div>
+                  <div class="checkRow"><span class="checkMark" style="color:var(--ok)">✓</span><span>Type, geldigheid en tijdvak komen uit AIXM; alleen <span class="mono">AMC = EHMCZAMC</span> is een vaste waarde.</span></div>
                   <div class="checkRow"><span class="checkMark" style="color:var(--ok)">✓</span><span>Alle hoogtes zijn omgezet naar <span class="mono">FL</span> of <span class="mono">ft</span>; 3 × meters omgerekend.</span></div>
                 </div>
               </div>
 
               <div class="panel">
-                <div class="panelHead"><span class="sectionLabel">Werkboek</span><div class="spacer"></div><span class="meta">LARAV4_export.xlsx</span></div>
+                <div class="panelHead"><span class="sectionLabel">Werkboek</span><div class="spacer"></div><span class="meta">LARAV4_2608_20260805.xlsx</span></div>
                 <div class="panelBody">
                   <div class="sheetList">
                     <div class="sheetRow"><span>1 · Areas</span><span>42 rijen</span></div>
-                    <div class="sheetRow"><span>2 · Area Volumes</span><span>42 rijen</span></div>
+                    <div class="sheetRow"><span>2 · Area Volumes</span><span>61 rijen</span></div>
                     <div class="sheetRow"><span>3 · Area Timesheets</span><span>42 rijen</span></div>
                     <div class="sheetRow"><span>4 · CDR Segments</span><span>kop</span></div>
                     <div class="sheetRow"><span>5 · CDR Segment Timesheets</span><span>kop</span></div>
@@ -667,11 +830,16 @@ pre.xml {
           </div>
           <div style="padding-top:14px" class="exportActions">
             <button class="btn btnPrimary">Exporteer LARA V4 (.xlsx)</button>
-            <button class="btn">Alle gebieden als KML</button>
-            <button class="btn">Alle gebieden als GeoJSON</button>
+            <button class="btn">LARA-selectie als KML</button>
+            <button class="btn">LARA-selectie als GeoJSON</button>
             <button class="btn">LARA IDs als CSV</button>
           </div>
           <p class="lead" style="padding-top:12px">
+            De export gaat over de 42 gebieden in de LARA-lijst, niet over alle 187 uit het AIXM-bestand. De bestandsnaam
+            draagt de AIRAC en de exportdatum: <span class="mono">LARAV4_2608_20260805.xlsx</span>,
+            <span class="mono">LARAV4_2608_20260805.kml</span>.
+          </p>
+          <p class="lead" style="padding-top:8px">
             De xlsx volgt <span class="mono">LARAV4_import_aanvullende_gebieden.xlsx</span>. Sheet 10 is geen onderdeel van
             het LARA-formaat maar een controlelaag: per gebied een link naar geojson.io om de coördinaten visueel na te lopen
             vóór de import.
@@ -682,12 +850,12 @@ pre.xml {
     </div>
 
     <footer class="footBar">
-      <span class="meta" id="footCtx">187 gebieden · 42 met LARA ID · 13 zonder geometrie</span>
+      <span class="meta" id="footCtx">187 gebieden · 42 in LARA · 13 zonder geometrie</span>
       <div class="spacer"></div>
-      <div class="keys">
+      <div class="keys" id="footKeys">
         <span class="key"><span class="keyCap">↑↓</span> rij</span>
-        <span class="key"><span class="keyCap">↵</span> ID opslaan</span>
-        <span class="key"><span class="keyCap">N</span> volgend vrij nummer</span>
+        <span class="key"><span class="keyCap">spatie</span> in/uit LARA</span>
+        <span class="key"><span class="keyCap">V</span> volume</span>
         <span class="key"><span class="keyCap">M</span> kaart</span>
         <span class="key"><span class="keyCap">X</span> AIXM</span>
       </div>
@@ -697,62 +865,105 @@ pre.xml {
 </div>
 
 <script>
-// --- gegevens voor de mockup-tabel ------------------------------------------
+// --- gegevens voor de mockup-tabellen ---------------------------------------
+// lara: staat in de LARA-lijst · id: toegekend Area ID (null = nog geen)
+// vol: aantal volumes uit AIXM · nieuw: kwam niet voor in de vorige dataset
 const DATA = [
-  [1,  "EHR1",    "Deelen",                         "R",   "—", "GND",     "FL 065", "Polygoon"],
-  [2,  "EHR2",    "Gilze-Rijen",                    "R",   "—", "GND",     "3500 ft","Polygoon"],
-  [3,  "EHR4A",   "Volkel",                         "R",   "—", "GND",     "FL 065", "Polygoon"],
-  [4,  "EHR4B",   "Volkel noord",                   "R",   "—", "FL 065",  "FL 195", "Polygoon"],
-  [5,  "EHD41",   "Vliehors",                       "D",   "—", "GND",     "FL 055", "Polygoon"],
-  [6,  "EHD42",   "Cornfield",                      "D",   "—", "GND",     "FL 100", "Cirkel"],
-  [7,  "EHTRA10", "TRA 10 Noordzee",                "TRA", "C", "FL 055",  "FL 195", "Polygoon"],
-  [8,  "EHTRA12", "TRA 12 Wadden",                  "TRA", "C", "FL 095",  "FL 245", "Polygoon"],
-  [9,  "EHTSA2",  "TSA 2 Frisia",                   "TSA", "C", "FL 055",  "FL 245", "Polygoon"],
-  [10, "EHTSA3",  "TSA 3 Terschelling",             "TSA", "C", "FL 065",  "FL 245", "Polygoon"],
-  [11, "EHCTR1",  "Schiphol CTR",                   "CTR", "C", "GND",     "3000 ft","Polygoon"],
-  [12, "EHR8",    "Marnewaard",                     "R",   "—", "GND",     "1500 ft","Cirkel"],
-  [13, "EHD25",   "Oldebroek",                      "D",   "—", "GND",     "FL 095", "Polygoon"],
-  [16, "EHTRA15", "TRA 15 Oost",                    "TRA", "C", "FL 105",  "FL 245", "Polygoon"],
-  [17, "EHTRA16", "TRA 16 Zuid",                    "TRA", "C", "FL 055",  "FL 195", "Polygoon"],
-  [18, "EHR3",    "Woensdrecht",                    "R",   "—", "GND",     "3000 ft","Polygoon"],
-  [27, "EHD12",   "Noordzee grensgebied",           "D",   "—", "GND",     "FL 195", "—"],
-  [null,"EHD44",  "Breezanddijk",                   "D",   "—", "GND",     "1200 ft","Cirkel"],
-  [null,"EHCTA1", "Amsterdam CTA 1",                "CTA", "A", "FL 055",  "FL 195", "Polygoon"],
-  [null,"EHTMA1", "Schiphol TMA 1",                 "TMA", "A", "1500 ft", "FL 055", "Polygoon"],
+  {id:1,   ident:"EHR1",    naam:"Deelen",              type:"R",   kl:"—", on:"GND",     bo:"FL 065", geom:"Polygoon", vol:1, lara:true},
+  {id:2,   ident:"EHR2",    naam:"Gilze-Rijen",         type:"R",   kl:"—", on:"GND",     bo:"3500 ft",geom:"Polygoon", vol:1, lara:true},
+  {id:3,   ident:"EHR4A",   naam:"Volkel",              type:"R",   kl:"—", on:"GND",     bo:"FL 065", geom:"Polygoon", vol:1, lara:true},
+  {id:4,   ident:"EHR4B",   naam:"Volkel noord",        type:"R",   kl:"—", on:"FL 065",  bo:"FL 195", geom:"Polygoon", vol:1, lara:true},
+  {id:5,   ident:"EHD41",   naam:"Vliehors",            type:"D",   kl:"—", on:"GND",     bo:"FL 055", geom:"Polygoon", vol:1, lara:true},
+  {id:6,   ident:"EHD42",   naam:"Cornfield",           type:"D",   kl:"—", on:"GND",     bo:"FL 100", geom:"Cirkel",   vol:1, lara:true},
+  {id:7,   ident:"EHTRA10", naam:"TRA 10 Noordzee",     type:"TRA", kl:"C", on:"FL 055",  bo:"FL 195", geom:"Polygoon", vol:3, lara:true},
+  {id:8,   ident:"EHTRA12", naam:"TRA 12 Wadden",       type:"TRA", kl:"C", on:"FL 095",  bo:"FL 245", geom:"Polygoon", vol:2, lara:true},
+  {id:9,   ident:"EHTSA2",  naam:"TSA 2 Frisia",        type:"TSA", kl:"C", on:"FL 055",  bo:"FL 245", geom:"Polygoon", vol:2, lara:true},
+  {id:10,  ident:"EHTSA3",  naam:"TSA 3 Terschelling",  type:"TSA", kl:"C", on:"FL 065",  bo:"FL 245", geom:"Polygoon", vol:1, lara:true},
+  {id:11,  ident:"EHCTR1",  naam:"Schiphol CTR",        type:"CTR", kl:"C", on:"GND",     bo:"3000 ft",geom:"Polygoon", vol:1, lara:true},
+  {id:12,  ident:"EHR8",    naam:"Marnewaard",          type:"R",   kl:"—", on:"GND",     bo:"1500 ft",geom:"Cirkel",   vol:1, lara:true},
+  {id:13,  ident:"EHD25",   naam:"Oldebroek",           type:"D",   kl:"—", on:"GND",     bo:"FL 095", geom:"Polygoon", vol:1, lara:true},
+  {id:16,  ident:"EHTRA15", naam:"TRA 15 Oost",         type:"TRA", kl:"C", on:"FL 105",  bo:"FL 245", geom:"Polygoon", vol:2, lara:true},
+  {id:17,  ident:"EHTRA16", naam:"TRA 16 Zuid",         type:"TRA", kl:"C", on:"FL 055",  bo:"FL 195", geom:"Polygoon", vol:1, lara:true},
+  {id:18,  ident:"EHR3",    naam:"Woensdrecht",         type:"R",   kl:"—", on:"GND",     bo:"3000 ft",geom:"Polygoon", vol:1, lara:true},
+  {id:27,  ident:"EHD12",   naam:"Noordzee grensgebied",type:"D",   kl:"—", on:"GND",     bo:"FL 195", geom:"—",        vol:1, lara:true},
+  {id:7,   ident:"EHTMA2",  naam:"Schiphol TMA 2",      type:"TMA", kl:"A", on:"2500 ft", bo:"FL 055", geom:"Polygoon", vol:1, lara:true, nieuw:true, dup:true},
+  {id:null,ident:"EHD44",   naam:"Breezanddijk",        type:"D",   kl:"—", on:"GND",     bo:"1200 ft",geom:"Cirkel",   vol:1, lara:true, nieuw:true},
+  {id:null,ident:"EHCTA1",  naam:"Amsterdam CTA 1",     type:"CTA", kl:"A", on:"FL 055",  bo:"FL 195", geom:"Polygoon", vol:1, lara:true, nieuw:true},
+  {id:null,ident:"EHTMA1",  naam:"Schiphol TMA 1",      type:"TMA", kl:"A", on:"1500 ft", bo:"FL 055", geom:"Polygoon", vol:1, lara:true, nieuw:true},
+  {id:null,ident:"EHR6",    naam:"Vlieland",            type:"R",   kl:"—", on:"GND",     bo:"FL 055", geom:"Polygoon", vol:1, lara:false},
+  {id:null,ident:"EHD26",   naam:"Havelte",             type:"D",   kl:"—", on:"GND",     bo:"1500 ft",geom:"Cirkel",   vol:1, lara:false},
+  {id:null,ident:"EHCTR2",  naam:"Rotterdam CTR",       type:"CTR", kl:"C", on:"GND",     bo:"3000 ft",geom:"Polygoon", vol:1, lara:false},
+  {id:null,ident:"EHAWY12", naam:"Airway UL620",        type:"AWY", kl:"C", on:"FL 195",  bo:"FL 245", geom:"Polygoon", vol:1, lara:false},
 ];
 
-const tbody = document.getElementById("rows");
-tbody.innerHTML = DATA.map(([id, ident, naam, type, klasse, onder, boven, geom], i) => {
-  const sel = ident === "EHR4A";
-  const geomCell = geom === "—"
-    ? '<span class="badge badgeWarn">onopgelost</span>'
-    : `<span class="dim">${geom}</span>`;
-  const idCell = id === null
+const HUIDIG = "EHTRA10";
+
+// --- scherm 2: alle gebieden uit het AIXM-bestand ---------------------------
+const geomCel = r => {
+  if (r.geom === "—") return '<span class="badge badgeWarn">onopgelost</span>';
+  if (r.vol > 1) return `<span class="dim">${r.geom}</span> <span class="badge badgeQuiet">${r.vol} vol</span>`;
+  return `<span class="dim">${r.geom}</span>`;
+};
+
+document.getElementById("rows").innerHTML = DATA.map(r => `
+  <tr data-selected="${r.ident === HUIDIG}">
+    <td class="pickCell"><button class="pick${r.lara ? " pickOn" : ""}" aria-label="In de LARA-lijst"></button></td>
+    <td class="ident">${r.ident}</td>
+    <td>${r.naam}</td>
+    <td class="dim">${r.type}</td>
+    <td class="dim">${r.kl}</td>
+    <td class="dim mono" style="font-size:11.5px">${r.on}</td>
+    <td class="dim mono" style="font-size:11.5px">${r.bo}</td>
+    <td>${geomCel(r)}</td>
+  </tr>`).join("");
+
+// --- scherm 3: de LARA-selectie ---------------------------------------------
+const notitie = r => {
+  if (r.dup) return '<span class="rowErr">7 is al in gebruik door EHTRA10</span>';
+  if (r.geom === "—") return '<span class="badge badgeWarn">geen geometrie</span>';
+  if (r.vol > 1) return `<span class="noteCell">${r.vol} volumes · ${r.vol} rijen in sheet 2</span>`;
+  if (r.nieuw) return '<span class="badge badgeQuiet">nieuw in 2608</span>';
+  return "";
+};
+
+const inLara = DATA.filter(r => r.lara)
+  .sort((a, b) => (a.id ?? 9e9) - (b.id ?? 9e9) || a.ident.localeCompare(b.ident));
+
+document.getElementById("laraRows").innerHTML = inLara.map(r => {
+  const idCel = r.id === null
     ? `<div class="idCell"><input class="idInput" type="number" placeholder="—"><button class="btn btnSmall" title="Volgend vrij nummer">N</button></div>`
-    : `<div class="idCell"><input class="idInput" type="number" value="${id}"></div>`;
-  return `<tr data-selected="${sel}">
-    <td>${idCell}</td>
-    <td class="ident">${ident}</td>
-    <td>${naam}</td>
-    <td class="dim">${type}</td>
-    <td class="dim">${klasse}</td>
-    <td class="dim mono" style="font-size:11.5px">${onder}</td>
-    <td class="dim mono" style="font-size:11.5px">${boven}</td>
-    <td>${geomCell}</td>
+    : `<div class="idCell"><input class="idInput${r.dup ? " idInputErr" : ""}" type="number" value="${r.id}"></div>`;
+  return `<tr data-selected="${r.ident === HUIDIG}">
+    <td>${idCel}</td>
+    <td class="ident">${r.ident}</td>
+    <td>${r.naam}</td>
+    <td class="dim">${r.type}</td>
+    <td class="dim mono" style="font-size:11.5px">${r.on}</td>
+    <td class="dim mono" style="font-size:11.5px">${r.bo}</td>
+    <td>${notitie(r)}</td>
+    <td><button class="rowDrop" title="Uit de LARA-lijst halen">×</button></td>
   </tr>`;
-}).join("") + `
-  <tr>
-    <td><div class="idCell"><input class="idInput idInputErr" type="number" value="7"><button class="btn btnSmall">N</button></div><div class="rowErr">7 is al in gebruik door EHTRA10</div></td>
-    <td class="ident">EHTMA2</td>
-    <td>Schiphol TMA 2</td>
-    <td class="dim">TMA</td>
-    <td class="dim">A</td>
-    <td class="dim mono" style="font-size:11.5px">2500 ft</td>
-    <td class="dim mono" style="font-size:11.5px">FL 055</td>
-    <td><span class="dim">Polygoon</span></td>
-  </tr>`;
+}).join("");
 
 // --- schermwissel ------------------------------------------------------------
+const FOOT = {
+  1: "187 gebieden gelezen · 13 zonder geometrie · 9 met meerdere volumes",
+  2: "187 gebieden · 42 in LARA · 145 niet geselecteerd",
+  3: "42 in LARA · 39 genummerd · 3 zonder ID · gaten: 14, 15, 19",
+  4: "42 gebieden · 61 volumerijen · 1 blokkerende bevinding",
+};
+const KEYS = {
+  2: `<span class="key"><span class="keyCap">↑↓</span> rij</span>
+      <span class="key"><span class="keyCap">spatie</span> in/uit LARA</span>
+      <span class="key"><span class="keyCap">V</span> volume</span>
+      <span class="key"><span class="keyCap">M</span> kaart</span>
+      <span class="key"><span class="keyCap">X</span> AIXM</span>`,
+  3: `<span class="key"><span class="keyCap">↑↓</span> rij</span>
+      <span class="key"><span class="keyCap">↵</span> ID opslaan</span>
+      <span class="key"><span class="keyCap">N</span> volgend vrij nummer</span>
+      <span class="key"><span class="keyCap">⌫</span> uit de lijst</span>`,
+};
+
 function toon(n) {
   document.querySelectorAll("[data-screen]").forEach(el =>
     el.dataset.on = String(el.dataset.screen === String(n)));
@@ -762,6 +973,8 @@ function toon(n) {
     el.className = el.dataset.lab === String(n) ? "stepLabelOn" : "stepLabel");
   document.querySelectorAll(".rail .item[data-goto]").forEach(el =>
     el.className = "item" + (el.dataset.goto === String(n) ? " itemActive" : ""));
+  document.getElementById("footCtx").textContent = FOOT[n] || "";
+  document.getElementById("footKeys").innerHTML = KEYS[n] || "";
 }
 document.querySelectorAll("[data-goto]").forEach(el =>
   el.addEventListener("click", () => toon(el.dataset.goto)));
@@ -772,6 +985,27 @@ document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () =>
   document.querySelectorAll(".tab").forEach(x => x.className = "tab" + (x === t ? " tabOn" : ""));
   document.querySelectorAll("[data-pane]").forEach(p =>
     p.dataset.on = String(p.dataset.pane === t.dataset.tab));
+}));
+
+// --- selectievakjes op scherm 2 ---------------------------------------------
+document.querySelectorAll(".pick").forEach(p => p.addEventListener("click", () => {
+  p.classList.toggle("pickOn");
+  const aan = document.querySelectorAll("#rows .pickOn").length;
+  document.getElementById("pickTally").textContent = `${aan} van ${DATA.length} in LARA`;
+}));
+document.getElementById("pickTally").textContent =
+  `${document.querySelectorAll("#rows .pickOn").length} van ${DATA.length} in LARA`;
+
+// --- volumekiezer -------------------------------------------------------------
+const VOL = [
+  ["volume 1 · FL 055–095", "BASE · eigen geometrie"],
+  ["volume 2 · FL 095–145", "UNION · uit EHTSA2"],
+  ["volume 3 · FL 145–195", "SUBTR · min EHR4B"],
+];
+document.querySelectorAll(".volChip").forEach((c, i) => c.addEventListener("click", () => {
+  document.querySelectorAll(".volChip").forEach(x => x.className = "volChip" + (x === c ? " volChipOn" : ""));
+  document.querySelector(".volSrc").textContent = VOL[i][1];
+  document.querySelector(".mapBox text + text").textContent = VOL[i][0];
 }));
 
 // --- thema -------------------------------------------------------------------

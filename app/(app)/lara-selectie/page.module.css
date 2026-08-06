@@ -1,0 +1,241 @@
+.paneel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ---------------------------------------------------------------- stand ---- */
+
+.strook {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.cel {
+  padding: 10px 16px;
+  border-right: 1px solid var(--rule);
+}
+
+.cel:last-child {
+  border-right: none;
+}
+
+.getal {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.getalWarn {
+  color: var(--warn);
+}
+
+.label {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+/* -------------------------------------------------------------- overname ---- */
+
+.overname {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  background: var(--action-wash);
+  border-bottom: 1px solid var(--rule);
+  font-size: 12.5px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.tally {
+  display: flex;
+  gap: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
+.vervallen {
+  color: var(--fout);
+}
+
+.nieuw {
+  color: var(--warn);
+}
+
+/* ------------------------------------------------------------ filterbalk ---- */
+
+.balk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.zoek {
+  max-width: 260px;
+  height: var(--field-h-compact);
+}
+
+.keuze {
+  width: auto;
+  height: var(--field-h-compact);
+  padding-right: 26px;
+}
+
+/* ---------------------------------------------------------------- tabel ---- */
+
+.tabelScroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.idCel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.idVeld {
+  width: 62px;
+  height: 24px;
+  padding: 0 6px;
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: right;
+}
+
+.idVeldFout {
+  border-color: var(--fout);
+  color: var(--fout);
+}
+
+.rijFout {
+  font-size: 10.5px;
+  color: var(--fout);
+  font-family: var(--mono);
+  margin-top: 2px;
+}
+
+.hoogte {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.weg {
+  border: none;
+  background: none;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink-3);
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.weg:hover {
+  color: var(--fout);
+}
+
+.leeg {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  line-height: 1.8;
+}
+
+.foutBalk {
+  padding: 8px 16px;
+  background: var(--fout-wash);
+  border-bottom: 1px solid var(--fout);
+  color: var(--fout);
+  font-size: 12px;
+}
+
+/* --------------------------------------------------------------- modaal ---- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 23, 26, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  padding: 24px;
+}
+
+.modaal {
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+}
+
+.modaalKop {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.modaalBody {
+  padding: 16px 18px;
+  overflow-y: auto;
+}
+
+.modaalVoet {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 18px;
+  border-top: 1px solid var(--rule);
+}
+
+.plakveld {
+  width: 100%;
+  min-height: 180px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 10px;
+  border: 1px solid var(--rule-strong);
+  background: var(--surface);
+  color: var(--ink);
+  resize: vertical;
+}
+
+.uitslag {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.8;
+  margin-top: 12px;
+}
+
+.uitslagFout {
+  color: var(--fout);
+}
+
+.uitslagWarn {
+  color: var(--warn);
+}

@@ -1,0 +1,136 @@
+/*
+ * Ontwerptokens — LARA Areas
+ *
+ * Structuur overgenomen van AIP Check (styles/tokens.css). De afwijking zit
+ * uitsluitend in het accent: indigo in plaats van teal, zodat de twee tools op
+ * een tweede beeldscherm niet te verwarren zijn.
+ *
+ * Twee regels die overal gelden en nergens uitzondering kennen:
+ *   radius is 0
+ *   er zijn geen schaduwen in de UI (alleen op het modale paneel)
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* ---- vlakken ---- */
+  --bg: #f2f3f4;           /* app-achtergrond, hoofdwerkvlak */
+  --surface: #ffffff;      /* kaarten, invoervelden, tabellen, balken */
+  --surface-sub: #f7f8f8;  /* zijkolommen, tabelkoppen, subtiel vlak */
+  --rail: #ecedef;         /* linkernavigatie */
+
+  /* ---- lijnen ---- */
+  --rule: #dcdfe1;         /* standaard hairline */
+  --rule-soft: #e7e9ea;    /* scheiding tussen rijen binnen een tabel */
+  --rule-strong: #b6bcbf;  /* rand van invoervelden en secundaire knoppen */
+  --rule-mid: #cfd4d6;     /* rand tussen stappen, uitgeschakelde knopvulling */
+
+  /* ---- tekst ---- */
+  --ink: #14171a;          /* primaire tekst, actieve stap, primaire rand */
+  --ink-2: #5a6367;        /* secundaire tekst */
+  --ink-3: #63696d;        /* gedempte tekst, sectielabels, mono-metadata */
+
+  /* ---- de enige interactiekleur ---- */
+  --action: #3f3d8f;       /* links, accentrand, primaire knop */
+  --action-wash: #f4f4fa;  /* achtergrond van een geselecteerde rij */
+  --action-hl: #dedcf0;    /* markering, rand van een accentbalk */
+
+  /* ---- statussen van een bevinding ---- */
+  --ok: #1f6b3f;
+  --ok-wash: #eff4f1;
+  --warn: #8a5a00;         /* aandachtspunt: blokkeert de export niet */
+  --warn-wash: #f6f2ea;
+  --fout: #a1231f;         /* blokkeert, of is aantoonbaar mis */
+  --fout-wash: #f7eeee;
+
+  /* ---- typografie ---- */
+  /* De variabelen komen uit next/font/local in app/layout.tsx. */
+  --sans: var(--font-plex-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono: var(--font-plex-mono), "SF Mono", Consolas, monospace;
+
+  /* ---- maten ---- */
+  --rail-w: 216px;
+  --sessionbar-h: 54px;
+  --stepbar-h: 46px;
+  --footbar-h: 32px;
+  --detail-w: 460px;       /* detailpaneel op het gebiedenscherm */
+
+  --field-h-compact: 30px;
+  --field-h: 34px;
+  --button-h: 36px;
+  --button-h-small: 26px;
+
+  --progress-h: 6px;
+  --step-num: 19px;
+  --checkbox: 15px;
+
+  /* ---- kaart ---- */
+  --map-land: #e9eaec;
+  --map-water: #dfe4e8;
+  --map-line: #c8ccd0;
+
+  /* ---- schaduw: uitsluitend voor het modale paneel ---- */
+  --shadow-modal: 0 6px 26px rgba(20, 23, 26, 0.20);
+}
+
+/* Donker thema, gevolgd uit de systeemvoorkeur. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14181a;
+    --surface: #1b2022;
+    --surface-sub: #171d1f;
+    --rail: #111617;
+    --rule: #2b3234;
+    --rule-soft: #232a2c;
+    --rule-mid: #333b3d;
+    --rule-strong: #3b4446;
+    --ink: #e6e9ea;
+    --ink-2: #9aa4a7;
+    --ink-3: #8b969a;
+    --action: #8b88e0;
+    --action-wash: #1c1b2e;
+    --action-hl: #343160;
+    --ok: #4f9e6f;
+    --ok-wash: #182220;
+    --warn: #c39a4a;
+    --warn-wash: #221e18;
+    --fout: #d1706c;
+    --fout-wash: #221819;
+
+    --map-land: #232a2c;
+    --map-water: #1c2426;
+    --map-line: #333b3d;
+
+    --shadow-modal: 0 6px 26px rgba(0, 0, 0, 0.45);
+  }
+}
+
+/* Expliciete themakeuze wint van de systeemvoorkeur. */
+:root[data-theme="dark"] {
+  --bg: #14181a;
+  --surface: #1b2022;
+  --surface-sub: #171d1f;
+  --rail: #111617;
+  --rule: #2b3234;
+  --rule-soft: #232a2c;
+  --rule-mid: #333b3d;
+  --rule-strong: #3b4446;
+  --ink: #e6e9ea;
+  --ink-2: #9aa4a7;
+  --ink-3: #8b969a;
+  --action: #8b88e0;
+  --action-wash: #1c1b2e;
+  --action-hl: #343160;
+  --ok: #4f9e6f;
+  --ok-wash: #182220;
+  --warn: #c39a4a;
+  --warn-wash: #221e18;
+  --fout: #d1706c;
+  --fout-wash: #221819;
+
+  --map-land: #232a2c;
+  --map-water: #1c2426;
+  --map-line: #333b3d;
+
+  --shadow-modal: 0 6px 26px rgba(0, 0, 0, 0.45);
+}

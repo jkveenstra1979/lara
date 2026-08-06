@@ -1,0 +1,249 @@
+.paneel {
+  width: var(--detail-w);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-left: 1px solid var(--rule);
+  min-height: 0;
+}
+
+.leeg {
+  padding: 40px 24px;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+/* ------------------------------------------------------------------ kop ---- */
+
+.kop {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+
+.kopRij {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.ident {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.naam {
+  color: var(--ink-2);
+  font-size: 12.5px;
+  margin-top: 2px;
+}
+
+.feiten {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0 18px;
+  margin-top: 12px;
+}
+
+.feit {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.feitSleutel {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.feitWaarde {
+  font-size: 12px;
+  font-family: var(--mono);
+  text-align: right;
+}
+
+/* ---------------------------------------------------------- volumekiezer ---- */
+
+.volBalk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: var(--action-wash);
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.volChip {
+  height: 22px;
+  padding: 0 9px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  border: 1px solid var(--rule-strong);
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.volChipAan {
+  border-color: var(--action);
+  color: var(--action);
+  font-weight: 600;
+}
+
+.volBron {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+
+/* ----------------------------------------------------------------- tabs ---- */
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-sub);
+  flex-shrink: 0;
+}
+
+.tab {
+  padding: 9px 16px;
+  font-size: 12px;
+  color: var(--ink-3);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-family: var(--sans);
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tabAan {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--action);
+  background: var(--surface);
+}
+
+.tabInhoud {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+/* --------------------------------------------------------- coördinaten ---- */
+
+.coordNoot {
+  padding: 10px 18px;
+  background: var(--action-wash);
+  border-bottom: 1px solid var(--rule);
+  font-size: 11.5px;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+.coordLijst {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.9;
+  padding: 14px 18px;
+  list-style: none;
+}
+
+.coordLijst li {
+  display: flex;
+  gap: 14px;
+}
+
+.coordIdx {
+  color: var(--ink-3);
+  width: 26px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.cirkel {
+  padding: 14px 18px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+/* ---------------------------------------------------------------- aixm ---- */
+
+.xml {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.65;
+  padding: 14px 18px;
+  white-space: pre;
+  color: var(--ink-2);
+  tab-size: 2;
+}
+
+/* --------------------------------------------------------------- kaart ---- */
+
+.kaart {
+  height: 100%;
+  width: 100%;
+  background: var(--map-water);
+  position: relative;
+}
+
+.kaartMeta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 6px 12px;
+  background: var(--surface);
+  border-top: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+  display: flex;
+  gap: 14px;
+  z-index: 1;
+}
+
+.kaartLeeg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  padding: 24px;
+  text-align: center;
+}
+
+/* ----------------------------------------------------------------- voet ---- */
+
+.voet {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 18px;
+  border-top: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+
+.waarschuwing {
+  padding: 10px 18px;
+  background: var(--fout-wash);
+  border-bottom: 1px solid var(--fout);
+  color: var(--fout);
+  font-size: 11.5px;
+  line-height: 1.6;
+}

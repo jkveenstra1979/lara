@@ -1,0 +1,125 @@
+.split {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.lijstPaneel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ------------------------------------------------------------ filterbalk ---- */
+
+.filterBalk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.zoek {
+  max-width: 260px;
+  height: var(--field-h-compact);
+}
+
+.keuze {
+  width: auto;
+  height: var(--field-h-compact);
+  padding-right: 26px;
+}
+
+.telling {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- tabel ---- */
+
+.tabelScroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.pickCel {
+  width: 34px;
+  padding-left: 14px;
+}
+
+/* Gevuld vakje = staat in de LARA-lijst. */
+.pick {
+  width: var(--checkbox);
+  height: var(--checkbox);
+  border: 1px solid var(--rule-strong);
+  background: var(--surface);
+  cursor: pointer;
+  padding: 0;
+  display: block;
+  position: relative;
+}
+
+.pick:hover {
+  border-color: var(--ink);
+}
+
+.pickAan {
+  background: var(--action);
+  border-color: var(--action);
+}
+
+.pickAan::after {
+  content: "✓";
+  position: absolute;
+  inset: 0;
+  color: #fff;
+  font-size: 10px;
+  line-height: 13px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.pick:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.hoogte {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.geomCel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.leeg {
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+
+.foutBalk {
+  padding: 8px 16px;
+  background: var(--fout-wash);
+  border-bottom: 1px solid var(--fout);
+  color: var(--fout);
+  font-size: 12px;
+}
+
+.rij {
+  cursor: pointer;
+}

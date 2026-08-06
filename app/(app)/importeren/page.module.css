@@ -1,0 +1,167 @@
+.work {
+  padding: 26px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 1200px;
+}
+
+/* ------------------------------------------------------------- dropzone ---- */
+
+.drop {
+  border: 1px dashed var(--rule-strong);
+  background: var(--surface);
+  padding: 44px 28px;
+  text-align: center;
+}
+
+.dropActief {
+  border-color: var(--action);
+  background: var(--action-wash);
+}
+
+.dropTitel {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.dropHint {
+  color: var(--ink-2);
+  font-size: 12.5px;
+  margin-bottom: 18px;
+}
+
+.gekozen {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-2);
+  margin-bottom: 18px;
+}
+
+.velden {
+  display: flex;
+  gap: 18px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.airacVeld {
+  width: 150px;
+}
+
+.verplicht {
+  color: var(--fout);
+}
+
+/* ------------------------------------------------------------ resultaat ---- */
+
+.voortgang {
+  height: var(--progress-h);
+  background: var(--rule-soft);
+  overflow: hidden;
+}
+
+.voortgangVulling {
+  height: 100%;
+  background: var(--action);
+  transition: width 0.2s linear;
+}
+
+.cijfers {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.cel {
+  padding: 14px 16px;
+  border-right: 1px solid var(--rule);
+}
+
+.cel:last-child {
+  border-right: none;
+}
+
+.getal {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.getalWarn {
+  color: var(--warn);
+}
+
+.getalFout {
+  color: var(--fout);
+}
+
+.label {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+
+.melding {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.meldingWarn {
+  background: var(--warn-wash);
+  border: 1px solid var(--warn);
+  color: var(--warn);
+}
+
+.meldingFout {
+  background: var(--fout-wash);
+  border: 1px solid var(--fout);
+  color: var(--fout);
+}
+
+.meldingOk {
+  background: var(--ok-wash);
+  border: 1px solid var(--ok);
+  color: var(--ok);
+}
+
+.teken {
+  font-family: var(--mono);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.grenslijst {
+  font-family: var(--mono);
+  font-size: 11px;
+  margin-top: 6px;
+  padding-left: 0;
+  list-style: none;
+}
+
+.grenslijst li {
+  padding: 2px 0;
+}
+
+/* --------------------------------------------------------------- tabel ---- */
+
+.tabelRand {
+  border: 1px solid var(--rule);
+}
+
+.acties {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}

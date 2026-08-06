@@ -1,0 +1,9 @@
+/* Auth-schermen staan los van de applicatie: geen rail, gecentreerd op --bg. */
+
+.wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
