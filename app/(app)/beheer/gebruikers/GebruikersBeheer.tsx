@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ROL_LABEL, type Gebruiker, type Rol, type Uitnodiging } from "@/lib/gebruikers";
+import { toonDatum } from "@/lib/datum";
 import styles from "./page.module.css";
-
-const datum = (iso: string) =>
-  new Date(iso).toLocaleDateString("nl-NL", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 /**
  * Gebruikersbeheer — alleen voor beheerders.
@@ -237,7 +235,7 @@ export default function GebruikersBeheer({
                       {u.verlopen ? (
                         <span className="badge badgeWarn">verlopen</span>
                       ) : (
-                        <span className="dim">{datum(u.expiresAt)}</span>
+                        <span className="dim">{toonDatum(u.expiresAt)}</span>
                       )}
                     </td>
                     <td>
@@ -313,7 +311,7 @@ export default function GebruikersBeheer({
                       <option value="admin">Beheerder</option>
                     </select>
                   </td>
-                  <td className="dim">{datum(g.createdAt)}</td>
+                  <td className="dim">{toonDatum(g.createdAt)}</td>
                   <td>
                     <div className={styles.acties}>
                       {g.id !== ik.id && (

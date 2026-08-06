@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { toonDatumTijd } from "@/lib/datum";
 import styles from "./shell.module.css";
 
 /**
@@ -121,14 +122,7 @@ export default function Shell({
             <>
               <span className={styles.scheiding} />
               <span className={styles.positie}>
-                AIRAC {actief.airac} · geïmporteerd{" "}
-                {new Date(actief.uploaded_at).toLocaleString("nl-NL", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                AIRAC {actief.airac} · geïmporteerd {toonDatumTijd(actief.uploaded_at)}
               </span>
             </>
           )}

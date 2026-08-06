@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { toonDatumTijd } from "@/lib/datum";
 import type { ImportSamenvatting } from "@/lib/aixmImport";
 import styles from "./page.module.css";
 
@@ -18,15 +19,6 @@ export type DatasetRij = {
   uploaded_at: string;
   in_lara: number;
 };
-
-const datumKort = (iso: string) =>
-  new Date(iso).toLocaleString("nl-NL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
 export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
   const [bestand, setBestand] = useState<File | null>(null);
@@ -342,7 +334,7 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
                 <tr key={d.id} data-selected={d.is_active}>
                   <td className="ident">{d.filename}</td>
                   <td className="dim mono">{d.airac}</td>
-                  <td className="dim">{datumKort(d.uploaded_at)}</td>
+                  <td className="dim">{toonDatumTijd(d.uploaded_at)}</td>
                   <td className="numeric">{d.airspace_count}</td>
                   <td className="numeric">{d.in_lara}</td>
                   <td>
