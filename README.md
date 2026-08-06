@@ -62,6 +62,17 @@ Zonder account kom je er met:
 npm run gebruiker -- jan@example.nl
 ```
 
+### Een import opnieuw verwerken
+
+Verandert het uitlezen — een boog die niet werd geïnterpoleerd, een grens die
+niet werd gevolgd — dan staat de oude uitkomst nog in de database. Op het
+importscherm zit per eerdere import een knop **Opnieuw verwerken**: die leest het
+bewaarde bestand uit de bucket en vervangt de gebieden, met behoud van de
+LARA-selectie en de nummering.
+
+Scheelt het opnieuw uploaden van tientallen megabytes, en is de reden dat het
+bronbestand bewaard blijft.
+
 ### Landsgrenzen
 
 104 van de 922 gebieden in het AIXM van 3 september 2026 volgen een landsgrens

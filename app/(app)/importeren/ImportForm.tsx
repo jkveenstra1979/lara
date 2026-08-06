@@ -29,6 +29,8 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
   const [samenvatting, setSamenvatting] = useState<ImportSamenvatting | null>(null);
   const [overname, setOvername] = useState<OvernameResultaat | null>(null);
   const [sleep, setSleep] = useState(false);
+  const [herverwerkt, setHerverwerkt] = useState<string | null>(null);
+  const [herbezig, setHerbezig] = useState<string | null>(null);
   const invoer = useRef<HTMLInputElement>(null);
 
   const airacGeldig = /^\d{4}$/.test(airac);
@@ -106,6 +108,41 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
     } catch (error) {
       setFout(error instanceof Error ? error.message : "De import is mislukt.");
       setFase("fout");
+    }
+  };
+
+  /**
+   * Een eerdere import opnieuw verwerken uit het bewaarde bestand.
+   *
+   * Nodig als het uitlezen is verbeterd: de brondata is dan dezelfde, maar wat
+   * eruit komt niet. Scheelt het opnieuw uploaden van tientallen megabytes, en
+   * de LARA-selectie blijft staan.
+   */
+  const herverwerk = async (dataset: DatasetRij) => {
+    setHerbezig(dataset.id);
+    setHerverwerkt(null);
+    setFout(null);
+    try {
+      const res = await fetch(`/api/datasets/${dataset.id}/herverwerken`, { method: "POST" });
+      const tekst = await res.text();
+      let data: { error?: string; samenvatting?: ImportSamenvatting; selectie?: { hersteld: number } } = {};
+      try {
+        data = JSON.parse(tekst);
+      } catch {
+        throw new Error(`De server antwoordde met ${res.status}: ${tekst.slice(0, 120)}`);
+      }
+      if (!res.ok) throw new Error(data.error ?? "Opnieuw verwerken mislukte.");
+      setSamenvatting(data.samenvatting as ImportSamenvatting);
+      setHerverwerkt(
+        `${dataset.filename} is opnieuw verwerkt` +
+          (data.selectie ? ` — ${data.selectie.hersteld} gebieden in de LARA-lijst behouden.` : ".")
+      );
+      setFase("klaar");
+    } catch (error) {
+      setFout(error instanceof Error ? error.message : "Opnieuw verwerken mislukte.");
+      setFase("fout");
+    } finally {
+      setHerbezig(null);
     }
   };
 
@@ -286,6 +323,13 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
                   </div>
                 )}
 
+                {herverwerkt && (
+                  <div className={`${styles.melding} ${styles.meldingOk}`}>
+                    <span className={styles.teken}>✓</span>
+                    <span>{herverwerkt}</span>
+                  </div>
+                )}
+
                 {overname && (
                   <div className={`${styles.melding} ${styles.meldingOk}`}>
                     <span className={styles.teken}>→</span>
@@ -348,12 +392,13 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
                   In LARA
                 </th>
                 <th style={{ width: 110 }} />
+                <th style={{ width: 150 }} />
               </tr>
             </thead>
             <tbody>
               {datasets.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="dim">
+                  <td colSpan={7} className="dim">
                     Nog geen imports.
                   </td>
                 </tr>
@@ -375,6 +420,17 @@ export default function ImportForm({ datasets }: { datasets: DatasetRij[] }) {
                     ) : (
                       <span className="badge badgeQuiet">{d.status}</span>
                     )}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn btnSmall"
+                      disabled={herbezig !== null}
+                      title="Het bewaarde bestand opnieuw uitlezen. De LARA-selectie blijft staan."
+                      onClick={() => herverwerk(d)}
+                    >
+                      {herbezig === d.id ? "Bezig…" : "Opnieuw verwerken"}
+                    </button>
                   </td>
                 </tr>
               ))}
