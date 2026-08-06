@@ -247,3 +247,19 @@
   font-size: 11.5px;
   line-height: 1.6;
 }
+
+/* Een kaartfout is anders onzichtbaar: de achtergrondtegels komen gewoon
+   binnen en alleen de vorm ontbreekt. */
+.kaartFout {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 2;
+  padding: 8px 12px;
+  background: var(--fout-wash);
+  border-bottom: 1px solid var(--fout);
+  color: var(--fout);
+  font-size: 11.5px;
+  line-height: 1.5;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Map as MapLibreMap, LngLatBounds, NavigationControl, setWorkerUrl } from "maplibre-gl";
 import type { Feature, Geometry } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -16,6 +16,7 @@ import styles from "./detail.module.css";
  */
 
 const BRON = "gebied";
+const LAGEN = ["gebied-vlak", "gebied-lijn", "gebied-punten"];
 
 /**
  * MapLibre draait het zware werk in een web worker en laadt die met een URL die
@@ -52,11 +53,12 @@ export default function GebiedKaart({
 }) {
   const houder = useRef<HTMLDivElement>(null);
   const kaart = useRef<MapLibreMap | null>(null);
+  const [fout, setFout] = useState<string | null>(null);
 
   useEffect(() => {
     if (!houder.current || kaart.current) return;
 
-    kaart.current = new MapLibreMap({
+    const map = new MapLibreMap({
       container: houder.current,
       style: {
         version: 8,
@@ -75,10 +77,20 @@ export default function GebiedKaart({
       attributionControl: false,
     });
 
-    kaart.current.addControl(new NavigationControl({ showCompass: false }), "top-right");
+    // Zonder deze handler faalt MapLibre stil: de achtergrondtegels komen
+    // binnen, maar een vorm die de worker niet kan verwerken verschijnt gewoon
+    // niet. Dan zie je een kaart die op de goede plek staat en verder leeg is.
+    map.on("error", (e) => {
+      const bericht = e.error?.message ?? "onbekende fout";
+      console.error("MapLibre:", e.error ?? e);
+      setFout(bericht);
+    });
+
+    map.addControl(new NavigationControl({ showCompass: false }), "top-right");
+    kaart.current = map;
 
     return () => {
-      kaart.current?.remove();
+      map.remove();
       kaart.current = null;
     };
   }, []);
@@ -89,38 +101,43 @@ export default function GebiedKaart({
     if (!map) return;
 
     const teken = () => {
-      for (const laag of ["gebied-vlak", "gebied-lijn", "gebied-punten"]) {
-        if (map.getLayer(laag)) map.removeLayer(laag);
-      }
+      // De stijl kan tussentijds herladen zijn; dan zijn onze lagen weg en zou
+      // addSource op een bestaande bron stuiten.
+      for (const laag of LAGEN) if (map.getLayer(laag)) map.removeLayer(laag);
       if (map.getSource(BRON)) map.removeSource(BRON);
       if (!feature?.geometry) return;
 
-      map.addSource(BRON, { type: "geojson", data: feature });
+      const accent =
+        getComputedStyle(document.documentElement).getPropertyValue("--action").trim() ||
+        "#3f3d8f";
 
-      const accent = getComputedStyle(document.documentElement)
-        .getPropertyValue("--action")
-        .trim() || "#3f3d8f";
-
-      map.addLayer({
-        id: "gebied-vlak",
-        type: "fill",
-        source: BRON,
-        paint: { "fill-color": accent, "fill-opacity": 0.14 },
-      });
-      map.addLayer({
-        id: "gebied-lijn",
-        type: "line",
-        source: BRON,
-        paint: { "line-color": accent, "line-width": 1.6 },
-      });
-      // De hoekpunten zichtbaar maken: bij een geïnterpoleerde boog wil je zien
-      // hoeveel punten er werkelijk de export in gaan.
-      map.addLayer({
-        id: "gebied-punten",
-        type: "circle",
-        source: BRON,
-        paint: { "circle-radius": 2.6, "circle-color": accent },
-      });
+      try {
+        map.addSource(BRON, { type: "geojson", data: feature });
+        map.addLayer({
+          id: "gebied-vlak",
+          type: "fill",
+          source: BRON,
+          paint: { "fill-color": accent, "fill-opacity": 0.18 },
+        });
+        map.addLayer({
+          id: "gebied-lijn",
+          type: "line",
+          source: BRON,
+          paint: { "line-color": accent, "line-width": 2 },
+        });
+        // De hoekpunten zichtbaar maken: bij een geïnterpoleerde boog wil je zien
+        // hoeveel punten er werkelijk de export in gaan.
+        map.addLayer({
+          id: "gebied-punten",
+          type: "circle",
+          source: BRON,
+          paint: { "circle-radius": 2.6, "circle-color": accent },
+        });
+        setFout(null);
+      } catch (e) {
+        setFout(e instanceof Error ? e.message : "De vorm kon niet worden getekend.");
+        return;
+      }
 
       const punten = allePunten(feature.geometry);
       if (punten.length) {
@@ -132,8 +149,21 @@ export default function GebiedKaart({
       }
     };
 
-    if (map.isStyleLoaded()) teken();
+    // `load` vuurt maar één keer. Is die al geweest — bijvoorbeeld omdat je
+    // tussen volumes wisselt — dan moet er meteen getekend worden.
+    if (map.loaded() || map.isStyleLoaded()) teken();
     else map.once("load", teken);
+
+    // Een stijl die opnieuw wordt gezet gooit onze lagen weg. Alleen dán
+    // hertekenen: `addLayer` vuurt zelf ook `styledata`, dus zonder deze
+    // controle blijft het rondgaan.
+    const herstel = () => {
+      if (feature?.geometry && !map.getLayer("gebied-vlak") && map.isStyleLoaded()) teken();
+    };
+    map.on("styledata", herstel);
+    return () => {
+      map.off("styledata", herstel);
+    };
   }, [feature]);
 
   const punten = feature?.geometry ? allePunten(feature.geometry) : [];
@@ -153,6 +183,7 @@ export default function GebiedKaart({
           naar verwijst.
         </div>
       )}
+      {fout && <div className={styles.kaartFout}>Kaart: {fout}</div>}
       <div className={styles.kaartMeta}>
         <span>{label}</span>
         <span>{punten.length} punten</span>
