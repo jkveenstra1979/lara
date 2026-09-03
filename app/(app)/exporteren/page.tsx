@@ -3,7 +3,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { haalExportSet } from "@/lib/exportData";
 import { bepaalBevindingen, telBevindingen, type Bevinding } from "@/lib/exportBevindingen";
-import { exportBestandsnaam } from "@/lib/laraWorkbook";
 import { extractTimesheets, timesheetsNaarLara } from "@/lib/laraTimesheets";
 import styles from "./page.module.css";
 
@@ -30,7 +29,20 @@ export default async function ExporterenPagina() {
   const { set } = await haalExportSet(supabase, gekozen.id);
   if (!set) redirect("/importeren");
 
-  const bevindingen = bepaalBevindingen(set.voorBevindingen);
+  // Wat de geometrieresolutie te melden had, als eigen bevinding erbij. Anders
+  // verdwijnt het in de serverlog en ziet niemand dat er iets is bijgeschaafd.
+  const resolutie = set.onopgelost.length
+    ? [
+        {
+          ernst: "let op" as const,
+          kop: `${set.onopgelost.length} ${set.onopgelost.length === 1 ? "gebied is" : "gebieden zijn"} bijgewerkt bij het samenvoegen`,
+          toelichting: Array.from(new Set(set.onopgelost.flatMap((o) => o.redenen))).join(" · "),
+          gebieden: set.onopgelost.map((o) => o.ident).sort(),
+        },
+      ]
+    : [];
+
+  const bevindingen = [...bepaalBevindingen(set.voorBevindingen), ...resolutie];
   const telling = telBevindingen(bevindingen);
 
   // Dezelfde telling als het werkboek maakt, zonder het bestand te bouwen.
@@ -40,7 +52,6 @@ export default async function ExporterenPagina() {
     0
   );
 
-  const naam = (ext: string) => exportBestandsnaam(set.dataset.airac, ext);
   const url = (soort: string) => `/api/export/${soort}?datasetId=${set.dataset.id}`;
 
   if (!set.gebieden.length) {
@@ -111,10 +122,10 @@ export default async function ExporterenPagina() {
           </div>
 
           <div className={styles.paneel}>
+            {/* Geen bestandsnaam in de kop: er zijn vier downloads en deze
+                telling gaat alleen over het werkboek. */}
             <div className={styles.paneelKop}>
               <span className="sectionLabel">Werkboek</span>
-              <span className="spacer" />
-              <span className="meta">{naam("xlsx")}</span>
             </div>
             <div className={styles.sheetLijst}>
               <div className={styles.sheetRij}>
@@ -146,8 +157,13 @@ export default async function ExporterenPagina() {
         </div>
 
         <div style={{ paddingTop: 14 }} className={styles.knoppen}>
+          {/* Twee uitgaven, één formaat: de V4- en V5-specificatie schrijven
+              hetzelfde voor, dus dit scheelt alleen in de bestandsnaam. */}
           <a className="btn btnPrimary" href={url("lara")} download>
             Exporteer LARA V4 (.xlsx)
+          </a>
+          <a className="btn btnPrimary" href={`${url("lara")}&versie=5`} download>
+            Exporteer LARA V5 (.xlsx)
           </a>
           <a className="btn" href={url("kml")} download>
             LARA-selectie als KML
@@ -155,18 +171,11 @@ export default async function ExporterenPagina() {
           <a className="btn" href={url("geojson")} download>
             LARA-selectie als GeoJSON
           </a>
-          <span className="spacer" />
-          <span className={styles.bestandsnaam}>
-            {naam("xlsx")} · {naam("kml")} · {naam("geojson")}
-          </span>
         </div>
 
         <p className="lead" style={{ paddingTop: 12 }}>
           De export gaat over de gebieden in de LARA-lijst, niet over alles uit het
-          AIXM-bestand. Het formaat volgt{" "}
-          <span className="mono">LARA V4.0 Excel Airspace Import Format</span>; wat er nog
-          nagelopen moet worden in LARA staat in{" "}
-          <span className="mono">docs/TESTPLAN.md</span>.
+          AIXM-bestand.
         </p>
       </section>
     </div>

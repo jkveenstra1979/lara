@@ -39,7 +39,7 @@ const gebied = (over: Partial<ExportGebied> = {}): ExportGebied => ({
   geometry: null,
   xmlSnippet: null,
   volumes: [
-    { operationSequence: 1, lowerlimit: 0, lowerunit: "FT", upperlimit: 65, upperunit: "FL", geojson: vierkant() },
+    { lowerlimit: 0, lowerunit: "FT", upperlimit: 65, upperunit: "FL", geojson: vierkant() },
   ],
   ...over,
 });
@@ -173,9 +173,9 @@ describe("bouwLaraWorkbook", () => {
     const drieVolumes = gebied({
       ident: "EHTRA10",
       volumes: [
-        { operationSequence: 1, lowerlimit: 55, lowerunit: "FL", upperlimit: 95, upperunit: "FL", geojson: vierkant() },
-        { operationSequence: 2, lowerlimit: 95, lowerunit: "FL", upperlimit: 145, upperunit: "FL", geojson: vierkant() },
-        { operationSequence: 3, lowerlimit: 145, lowerunit: "FL", upperlimit: 195, upperunit: "FL", geojson: vierkant() },
+        { lowerlimit: 55, lowerunit: "FL", upperlimit: 95, upperunit: "FL", geojson: vierkant() },
+        { lowerlimit: 95, lowerunit: "FL", upperlimit: 145, upperunit: "FL", geojson: vierkant() },
+        { lowerlimit: 145, lowerunit: "FL", upperlimit: 195, upperunit: "FL", geojson: vierkant() },
       ],
     });
     const { buffer, rijen } = await bouwLaraWorkbook([drieVolumes]);
@@ -207,7 +207,7 @@ describe("bouwLaraWorkbook", () => {
       ident: "EHER",
       geometry: "Circle of radius 5 NM centered on:\nN 54 05 52.89 E 003 21 36.86",
       volumes: [
-        { operationSequence: 1, lowerlimit: 0, lowerunit: "FT", upperlimit: 2000, upperunit: "FT", geojson: null },
+        { lowerlimit: 0, lowerunit: "FT", upperlimit: 2000, upperunit: "FT", geojson: null },
       ],
     });
     const { buffer } = await bouwLaraWorkbook([cirkel]);

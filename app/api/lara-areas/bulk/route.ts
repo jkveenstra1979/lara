@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseBulkLijst } from "@/lib/bulkNummers";
+import { inBrokken, schrijfInBrokken } from "@/lib/supabase/inBrokken";
 
 export const runtime = "nodejs";
 
@@ -61,15 +62,39 @@ export async function POST(req: NextRequest) {
   // Eerst de nummers vrijmaken die deze lijst opnieuw uitdeelt. Zonder deze stap
   // botst een omwisseling (1↔2) op de unique constraint terwijl het resultaat
   // prima geldig is.
+  //
+  // In twee stappen, en in brokken. Het stond eerst in één statement met
+  // `.not("airspace_id", "in", "(…)")`, maar dat filter gaat over de URL: bij een
+  // geplakte lijst van een paar honderd regels werd het verzoek te lang en
+  // antwoordde PostgREST met 414 — waarna het vrijmaken stil oversloeg en de
+  // upsert erna op een duplicaat stukliep.
   const nummers = teVerwerken.map((t) => t.lara_area_id);
-  const doelen = teVerwerken.map((t) => t.airspace_id);
+  const doelen = new Set(teVerwerken.map((t) => t.airspace_id));
+
   if (nummers.length) {
-    await supabase
-      .from("lara_areas")
-      .update({ lara_area_id: null, updated_by: user.id })
-      .eq("dataset_id", datasetId)
-      .in("lara_area_id", nummers)
-      .not("airspace_id", "in", `(${doelen.join(",")})`);
+    const { data: houders, error: houderFout } = await inBrokken(nummers, (brok) =>
+      supabase
+        .from("lara_areas")
+        .select("airspace_id")
+        .eq("dataset_id", datasetId)
+        .in("lara_area_id", brok)
+    );
+    if (houderFout) return NextResponse.json({ error: houderFout }, { status: 500 });
+
+    // Alleen de gebieden die hun nummer kwijtraken; wie het houdt, blijft staan.
+    const vrijTeMaken = houders
+      .map((h) => h.airspace_id)
+      .filter((id) => !doelen.has(id));
+
+    if (vrijTeMaken.length) {
+      const { error: vrijFout } = await schrijfInBrokken(vrijTeMaken, (brok) =>
+        supabase
+          .from("lara_areas")
+          .update({ lara_area_id: null, updated_by: user.id })
+          .in("airspace_id", brok)
+      );
+      if (vrijFout) return NextResponse.json({ error: vrijFout }, { status: 500 });
+    }
   }
 
   const { error } = await supabase.from("lara_areas").upsert(

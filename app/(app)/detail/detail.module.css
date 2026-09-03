@@ -1,4 +1,5 @@
 .paneel {
+  position: relative;
   width: var(--detail-w);
   flex-shrink: 0;
   display: flex;
@@ -6,6 +7,32 @@
   background: var(--surface);
   border-left: 1px solid var(--rule);
   min-height: 0;
+}
+
+/* Zweeft boven de kop in plaats van erin: het paneel heeft vier gedaantes en
+   alleen de gevulde heeft een kop. */
+.sluit {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sluit:hover {
+  color: var(--ink);
+  border-color: var(--rule-strong);
 }
 
 .leeg {

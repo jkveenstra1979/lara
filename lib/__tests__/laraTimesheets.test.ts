@@ -142,3 +142,22 @@ describe("timesheetsNaarLara", () => {
     expect(overgeslagen).toHaveLength(1);
   });
 });
+
+describe("HOL in de praktijk", () => {
+  // Nagelopen op het AIXM van 1 oktober 2026: negen gebieden hebben een
+  // HOL-timesheet, en bij acht daarvan is het tijdvenster gelijk aan een
+  // zaterdag of zondag die wél wordt geëxporteerd. Alleen EHAAGLD087 heeft een
+  // venster dat geen andere dag dekt. Zie docs/TESTPLAN.md § 4.2.
+  it("slaat HOL over en zegt waarom", () => {
+    const uit = timesheetsNaarLara([
+      { day: "SAT", startTime: "09:00", endTime: "18:00" },
+      { day: "SUN", startTime: "09:00", endTime: "18:00" },
+      { day: "HOL", startTime: "09:00", endTime: "18:00" },
+    ]);
+
+    expect(uit.rijen).toHaveLength(2);
+    expect(uit.overgeslagen).toEqual([
+      { day: "HOL", reden: "Feestdag — LARA kent geen dagwaarde hiervoor." },
+    ]);
+  });
+});

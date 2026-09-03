@@ -52,6 +52,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       actief={actief}
       aantalDatasets={alle.length}
       inLara={inLara}
+      // Zonder token doet /api/melding niets; dan hoort de knop er ook niet te staan.
+      kanMelden={Boolean(process.env.GITHUB_TOKEN)}
     >
       {children}
     </Shell>

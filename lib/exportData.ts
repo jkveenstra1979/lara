@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import type { Database } from "./database.types";
+import { inBrokken } from "./supabase/inBrokken";
+import { losOp, type ComponentRij, type GebiedRij, type Index } from "./volumeResolutie";
 import type { ExportGebied } from "./laraWorkbook";
 import type { BevindingGebied } from "./exportBevindingen";
 import { toonHoogte } from "./gebieden";
@@ -24,6 +26,8 @@ export type ExportSet = {
   gebieden: ExportGebied[];
   /** Dezelfde gebieden, in de vorm die de bevindingencontrole verwacht. */
   voorBevindingen: BevindingGebied[];
+  /** Gebieden waarvan de vorm niet, of niet helemaal, op te lossen was. */
+  onopgelost: { ident: string; redenen: string[] }[];
 };
 
 type GeometrieRij = Database["public"]["Tables"]["geometries"]["Row"];
@@ -31,16 +35,86 @@ type GeometrieRij = Database["public"]["Tables"]["geometries"]["Row"];
 const alsUuidLijst = (waarde: unknown): string[] =>
   Array.isArray(waarde) ? waarde.filter((v): v is string => typeof v === "string") : [];
 
-/** De eigen vorm van een volume, of die van het gebied waar het naar verwijst. */
-function vormVan(
-  volume: GeometrieRij,
-  geleend: Map<string, Feature<Geometry>>
-): Feature<Geometry> | null {
-  const eigen = (volume.geojson as unknown as Feature<Geometry> | null) ?? null;
-  if (eigen) return eigen;
-  for (const uuid of alsUuidLijst(volume.derived_from)) {
-    const vorm = geleend.get(uuid);
-    if (vorm) return vorm;
+/** Geometrierijen bij hun gebied zetten, in de vorm die de resolver leest. */
+function voegComponentenToe(index: Index, rijen: GeometrieRij[]) {
+  for (const rij of rijen) {
+    const gebied = index.perId.get(rij.airspace_id);
+    if (!gebied) continue;
+    const component: ComponentRij = {
+      operation: rij.operation,
+      operationSequence: rij.operation_sequence,
+      geojson: (rij.geojson as unknown as Feature<Geometry> | null) ?? null,
+      derivedFrom: alsUuidLijst(rij.derived_from),
+      lowerlimit: rij.lowerlimit,
+      lowerunit: rij.lowerunit,
+      upperlimit: rij.upperlimit,
+      upperunit: rij.upperunit,
+    };
+    gebied.componenten.push(component);
+  }
+}
+
+/** Alle UUID's waar de index nog niets van weet. */
+function ontbrekendeVerwijzingen(index: Index): string[] {
+  const gezocht = new Set<string>();
+  for (const gebied of index.perId.values()) {
+    for (const component of gebied.componenten) {
+      if (component.geojson) continue;
+      for (const uuid of component.derivedFrom) {
+        if (!index.idPerUuid.has(uuid)) gezocht.add(uuid);
+      }
+    }
+  }
+  return Array.from(gezocht);
+}
+
+/**
+ * De keten van verwijzingen ophalen tot er niets nieuws meer bij komt.
+ *
+ * De grens van acht rondes is een noodrem, geen verwachting: de langste keten in
+ * het AIXM van 1 oktober 2026 is twee stappen.
+ */
+async function vulKetenAan(
+  supabase: SupabaseClient<Database>,
+  datasetId: string,
+  index: Index
+): Promise<string | null> {
+  for (let ronde = 0; ronde < 8; ronde += 1) {
+    const gezocht = ontbrekendeVerwijzingen(index);
+    if (!gezocht.length) return null;
+
+    const { data: bronnen, error: bronFout } = await inBrokken(gezocht, (brok) =>
+      supabase
+        .from("airspaces")
+        .select("id, uuid_identifier")
+        .eq("dataset_id", datasetId)
+        .in("uuid_identifier", brok)
+    );
+    if (bronFout) return bronFout;
+
+    const nieuweIds: string[] = [];
+    for (const bron of bronnen) {
+      if (index.perId.has(bron.id)) continue;
+      index.perId.set(bron.id, { uuid: bron.uuid_identifier, componenten: [] });
+      if (bron.uuid_identifier) index.idPerUuid.set(bron.uuid_identifier, bron.id);
+      nieuweIds.push(bron.id);
+    }
+    // Alles wat gezocht werd en niet bestaat: markeren, anders blijft de lus
+    // er elke ronde opnieuw naar vragen.
+    for (const uuid of gezocht) {
+      if (!index.idPerUuid.has(uuid)) index.idPerUuid.set(uuid, "");
+    }
+    if (!nieuweIds.length) return null;
+
+    const { data: extra, error: extraFout } = await inBrokken(nieuweIds, (brok) =>
+      supabase
+        .from("geometries")
+        .select("*")
+        .in("airspace_id", brok)
+        .order("operation_sequence", { ascending: true, nullsFirst: false })
+    );
+    if (extraFout) return extraFout;
+    voegComponentenToe(index, extra as GeometrieRij[]);
   }
   return null;
 }
@@ -82,87 +156,77 @@ export async function haalExportSet(
   }));
   const airspaceIds = rijen.map((r) => r.airspace_id);
   if (!airspaceIds.length) {
-    return { set: { dataset, gebieden: [], voorBevindingen: [] }, error: null };
+    return { set: { dataset, gebieden: [], voorBevindingen: [], onopgelost: [] }, error: null };
   }
 
-  // Volumes: de samenvoegrij hoort niet in sheet 2.
-  const { data: geometrieRijen } = await supabase
-    .from("geometries")
-    .select("*")
-    .in("airspace_id", airspaceIds)
-    .neq("operation", "AGG")
-    .order("operation_sequence", { ascending: true, nullsFirst: false });
+  // Alle geometrierijen van de selectie — de AGG-rij inbegrepen. Die is niet
+  // "een extra volume" maar juist het antwoord: de parser heeft de componenten
+  // daar al samengevoegd.
+  //
+  // In brokken, want 319 UUID's in één `.in()` maken een URL van 11 KB en
+  // leveren 414 op.
+  const { data: geometrieRijen, error: volumeFout } = await inBrokken(airspaceIds, (brok) =>
+    supabase
+      .from("geometries")
+      .select("*")
+      .in("airspace_id", brok)
+      .order("operation_sequence", { ascending: true, nullsFirst: false })
+  );
+  if (volumeFout) return { set: null, error: volumeFout };
 
-  const volumesPerGebied = new Map<string, GeometrieRij[]>();
-  for (const rij of (geometrieRijen ?? []) as GeometrieRij[]) {
-    const lijst = volumesPerGebied.get(rij.airspace_id) ?? [];
-    lijst.push(rij);
-    volumesPerGebied.set(rij.airspace_id, lijst);
+  const index: Index = { perId: new Map<string, GebiedRij>(), idPerUuid: new Map<string, string>() };
+  for (const rij of rijen) {
+    if (!rij.gebied) continue;
+    index.perId.set(rij.airspace_id, { uuid: rij.gebied.uuid_identifier, componenten: [] });
+    if (rij.gebied.uuid_identifier) index.idPerUuid.set(rij.gebied.uuid_identifier, rij.airspace_id);
   }
+  voegComponentenToe(index, geometrieRijen as GeometrieRij[]);
 
   // XML-fragmenten, voor de timesheets in sheet 3.
   const uuids = rijen.map((r) => r.gebied?.uuid_identifier).filter((u): u is string => Boolean(u));
   const snippetPerUuid = new Map<string, string>();
   if (uuids.length) {
-    const { data: snippets } = await supabase
-      .from("xml_snippets")
-      .select("uuid, snippet")
-      .eq("dataset_id", datasetId)
-      .in("uuid", uuids);
-    for (const s of snippets ?? []) snippetPerUuid.set(s.uuid, s.snippet);
+    const { data: snippets, error: snippetFout } = await inBrokken(uuids, (brok) =>
+      supabase
+        .from("xml_snippets")
+        .select("uuid, snippet")
+        .eq("dataset_id", datasetId)
+        .in("uuid", brok)
+    );
+    if (snippetFout) return { set: null, error: snippetFout };
+    for (const s of snippets) snippetPerUuid.set(s.uuid, s.snippet);
   }
 
-  // Gebieden die hun vorm van een ánder gebied lenen.
+  // Gebieden die hun vorm van een ánder gebied lenen — en dat gebied mag zelf
+  // weer lenen.
   //
   // AIXM laat een airspace naar een andere verwijzen in plaats van zijn eigen
   // coördinaten op te schrijven: EHR4A is "EHR4, maar dan deze hoogteband".
-  // Zo'n volume heeft `derived_from` gevuld en `geojson` leeg. Zonder deze stap
-  // komt de kolom Coordinates leeg in het werkboek en weigert LARA de rij — in
-  // het bestand van 3 september 2026 raakt dat 11 van de 100 reserveerbare
-  // gebieden, waaronder EHR3A, EHR4A en EHTRA10A.
-  const teLenen = new Set<string>();
-  for (const rij of rijen) {
-    for (const volume of volumesPerGebied.get(rij.airspace_id) ?? []) {
-      if (volume.geojson) continue;
-      for (const uuid of alsUuidLijst(volume.derived_from)) teLenen.add(uuid);
-    }
-  }
-
-  const vormPerUuid = new Map<string, Feature<Geometry>>();
-  if (teLenen.size) {
-    const { data: bronnen } = await supabase
-      .from("airspaces")
-      .select("id, uuid_identifier")
-      .eq("dataset_id", datasetId)
-      .in("uuid_identifier", Array.from(teLenen));
-
-    const uuidPerId = new Map((bronnen ?? []).map((b) => [b.id, b.uuid_identifier]));
-    if (uuidPerId.size) {
-      const { data: bronGeometrie } = await supabase
-        .from("geometries")
-        .select("airspace_id, geojson, operation")
-        .in("airspace_id", Array.from(uuidPerId.keys()))
-        .not("geojson", "is", null);
-
-      // De samenvoegrij wint: die beschrijft het brongebied als geheel.
-      for (const g of bronGeometrie ?? []) {
-        const uuid = uuidPerId.get(g.airspace_id);
-        if (!uuid) continue;
-        if (g.operation === "AGG" || !vormPerUuid.has(uuid)) {
-          vormPerUuid.set(uuid, g.geojson as unknown as Feature<Geometry>);
-        }
-      }
-    }
-  }
+  // Zulke ketens zijn langer dan één stap: EHAADLG35B wijst naar EHAME2, en die
+  // wijst pas naar EHMCE — het enige gebied in de rij met echte coördinaten.
+  // Eén stap volgen was dus niet genoeg; daarom halen we de keten op tot er
+  // niets nieuws meer bij komt.
+  const fout = await vulKetenAan(supabase, datasetId, index);
+  if (fout) return { set: null, error: fout };
 
   const gebieden: ExportGebied[] = [];
   const voorBevindingen: BevindingGebied[] = [];
 
+  const onopgelost: { ident: string; redenen: string[] }[] = [];
+
   for (const rij of rijen) {
     const g = rij.gebied;
     if (!g) continue;
-    const volumes = volumesPerGebied.get(rij.airspace_id) ?? [];
     const snippet = g.uuid_identifier ? (snippetPerUuid.get(g.uuid_identifier) ?? null) : null;
+
+    // Eén gebied, één vorm. Valt die uiteen in losse vlakken, dan krijgt sheet 2
+    // een rij per vlak — met dezelfde hoogteband, want het blijft één gebied.
+    const opgelost = losOp(rij.airspace_id, index);
+    if (opgelost.redenen.length) onopgelost.push({ ident: g.ident, redenen: opgelost.redenen });
+
+    const volumes = opgelost.vlakken.length
+      ? opgelost.vlakken.map((vlak) => ({ ...opgelost.band, geojson: vlak }))
+      : [{ ...opgelost.band, geojson: null }];
 
     gebieden.push({
       laraAreaId: rij.lara_area_id,
@@ -175,14 +239,7 @@ export async function haalExportSet(
       validTimeEnd: null,
       geometry: g.geometry,
       xmlSnippet: snippet,
-      volumes: volumes.map((v) => ({
-        operationSequence: v.operation_sequence,
-        lowerlimit: v.lowerlimit,
-        lowerunit: v.lowerunit,
-        upperlimit: v.upperlimit,
-        upperunit: v.upperunit,
-        geojson: vormVan(v, vormPerUuid),
-      })),
+      volumes,
     });
 
     voorBevindingen.push({
@@ -192,17 +249,11 @@ export async function haalExportSet(
       geometryStatus: g.geometry_status,
       xmlSnippet: snippet,
       geometry: g.geometry,
-      volumes: volumes.map((v) => ({
-        lowerlimit: v.lowerlimit,
-        lowerunit: v.lowerunit,
-        upperlimit: v.upperlimit,
-        upperunit: v.upperunit,
-        geojson: vormVan(v, vormPerUuid),
-      })),
+      volumes,
     });
   }
 
-  return { set: { dataset, gebieden, voorBevindingen }, error: null };
+  return { set: { dataset, gebieden, voorBevindingen, onopgelost }, error: null };
 }
 
 /** De selectie als FeatureCollection, voor de KML- en GeoJSON-download. */

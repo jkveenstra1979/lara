@@ -1,15 +1,14 @@
 "use client";
 
-import { Suspense, useActionState } from "react";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { signIn } from "./actions";
+import Formulier from "./Formulier";
 import styles from "./page.module.css";
 
+/** Het kale inlogscherm; hier stuurt de proxy je heen bij een dieper pad. */
 function InloggenForm() {
   const params = useSearchParams();
-  const verder = params.get("verder") ?? "/";
-
-  const [state, action, pending] = useActionState(signIn, null);
+  const verder = params.get("verder") ?? "/importeren";
 
   return (
     <main className={styles.card}>
@@ -20,42 +19,7 @@ function InloggenForm() {
         <span className={styles.tagline}>AIXM → LARA V4</span>
       </div>
 
-      <form action={action} className={styles.fields}>
-        <input type="hidden" name="verder" value={verder} />
-
-        <div>
-          <label className="field" htmlFor="email">
-            E-mailadres
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            className="monoField"
-            autoComplete="username"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="field" htmlFor="password">
-            Wachtwoord
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-          />
-        </div>
-
-        {state?.error && <span className={styles.error}>{state.error}</span>}
-
-        <button type="submit" className="btn btnPrimary" disabled={pending}>
-          {pending ? "Bezig…" : "Inloggen"}
-        </button>
-      </form>
+      <Formulier verder={verder} />
 
       <div className={styles.foot}>
         <span className="meta">

@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toonHoogte, type Gebied } from "@/lib/gebieden";
-import DetailPaneel from "./DetailPaneel";
+import DetailPaneel from "../detail/DetailPaneel";
+import { useDetailPaneel } from "../detail/useDetailPaneel";
 import styles from "./page.module.css";
 
 type LaraFilter = "alle" | "in" | "uit";
@@ -35,7 +36,7 @@ export default function GebiedenLijst({
   const [aangevinkt, setAangevinkt] = useState<Set<string>>(new Set());
   const [bezig, setBezig] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
-  const [gekozen, setGekozen] = useState<string | null>(null);
+  const detail = useDetailPaneel();
   const router = useRouter();
 
   const types = useMemo(
@@ -123,8 +124,8 @@ export default function GebiedenLijst({
   };
 
   return (
-    <div className={styles.split}>
-      <div className={styles.lijstPaneel}>
+    <div className="split" {...detail.splitProps}>
+      <div className="lijstPaneel">
         <div className={styles.filterBalk}>
           <input
             type="search"
@@ -164,6 +165,16 @@ export default function GebiedenLijst({
           <span className={styles.telling}>
             {zichtbaar.length} van {gebieden.length} · {inLara} in LARA
           </span>
+
+          <button
+            type="button"
+            className="btn btnSmall"
+            aria-pressed={detail.open}
+            onClick={detail.wissel}
+            title={detail.open ? "Detailpaneel verbergen" : "Detailpaneel tonen"}
+          >
+            {detail.open ? "Details verbergen" : "Details tonen"}
+          </button>
         </div>
 
         {/* De actiebalk verschijnt pas als je iets hebt aangevinkt. Zo kan er
@@ -233,8 +244,8 @@ export default function GebiedenLijst({
               {zichtbaar.map((g) => (
                 <tr
                   key={g.id}
-                  data-selected={g.id === gekozen}
-                  onClick={() => setGekozen(g.id)}
+                  data-selected={g.id === detail.gekozen}
+                  onClick={() => detail.kies(g.id)}
                   className={styles.rij}
                 >
                   <td className={styles.pickCel} onClick={(e) => e.stopPropagation()}>
@@ -273,7 +284,8 @@ export default function GebiedenLijst({
                   <td>
                     {g.inLara ? (
                       <span className="badge badgeOk">
-                        {g.laraAreaId !== null ? `LARA ${g.laraAreaId}` : "in LARA"}
+                        <span aria-hidden="true">✓</span>
+                        {g.laraAreaId !== null ? `ID:${g.laraAreaId}` : "in LARA"}
                       </span>
                     ) : (
                       <span className="dim">—</span>
@@ -295,7 +307,15 @@ export default function GebiedenLijst({
         </div>
       </div>
 
-      <DetailPaneel airspaceId={gekozen} />
+      {detail.open && (
+        <>
+          <div className="splitter" {...detail.splitterProps} />
+          <DetailPaneel
+            airspaceId={detail.gekozen}
+            onSluiten={detail.sluit}
+          />
+        </>
+      )}
     </div>
   );
 }

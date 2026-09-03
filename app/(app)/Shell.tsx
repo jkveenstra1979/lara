@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { toonDatumTijd } from "@/lib/datum";
+import MeldKnop from "./MeldKnop";
 import styles from "./shell.module.css";
 
 /**
@@ -34,6 +35,7 @@ export default function Shell({
   actief,
   aantalDatasets,
   inLara,
+  kanMelden,
 }: {
   children: React.ReactNode;
   email: string;
@@ -41,6 +43,7 @@ export default function Shell({
   actief: ShellDataset | null;
   aantalDatasets: number;
   inLara: number;
+  kanMelden: boolean;
 }) {
   const pad = usePathname();
 
@@ -66,10 +69,21 @@ export default function Shell({
                   ? inLara
                   : undefined;
 
+            // Hetzelfde nummer als in de stappenbalk: de rail en de balk tonen
+            // dezelfde vier stappen, dus ook dezelfde volgorde.
+            const nummer = (
+              <span className={`${styles.itemNum} ${aan ? styles.itemNumAan : ""}`}>
+                {stap.num}
+              </span>
+            );
+
             if (uit) {
               return (
                 <span key={stap.pad} className={`${styles.item} ${styles.itemUit}`}>
-                  {stap.naam}
+                  <span className={styles.itemStap}>
+                    {nummer}
+                    {stap.naam}
+                  </span>
                 </span>
               );
             }
@@ -79,7 +93,10 @@ export default function Shell({
                 href={stap.pad}
                 className={`${styles.item} ${aan ? styles.itemActief : ""}`}
               >
-                {stap.naam}
+                <span className={styles.itemStap}>
+                  {nummer}
+                  {stap.naam}
+                </span>
                 {telling !== undefined && <span className={styles.telling}>{telling}</span>}
               </Link>
             );
@@ -165,6 +182,9 @@ export default function Shell({
               : "importeer een AIXM-bestand om te beginnen"}
           </span>
           <span className="spacer" />
+          {kanMelden && (
+            <MeldKnop dataset={actief ? `${actief.filename} — AIRAC ${actief.airac}` : null} />
+          )}
           <span className="meta">LARA Areas</span>
         </footer>
       </div>

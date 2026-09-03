@@ -2,6 +2,14 @@ import { describe, expect, it } from "vitest";
 import { isPubliekPad } from "../../proxy";
 
 describe("isPubliekPad", () => {
+  it("laat de voorpagina door, maar niet alles wat eronder hangt", () => {
+    // `/` staat bewust niet in PUBLIEKE_PADEN: als prefix zou het met
+    // startsWith de hele applicatie openzetten.
+    expect(isPubliekPad("/")).toBe(true);
+    expect(isPubliekPad("/gebieden")).toBe(false);
+    expect(isPubliekPad("/api/export/lara")).toBe(false);
+  });
+
   it("laat de schermen door die zonder account bereikbaar moeten zijn", () => {
     expect(isPubliekPad("/inloggen")).toBe(true);
     expect(isPubliekPad("/uitnodiging")).toBe(true);
@@ -24,8 +32,9 @@ describe("isPubliekPad", () => {
   });
 
   it("houdt de rest afgeschermd", () => {
+    // `/` staat hier niet meer bij: dat is sinds de voorpagina openbaar, met de
+    // uitleg en het inlogveld erop.
     for (const pad of [
-      "/",
       "/importeren",
       "/gebieden",
       "/lara-selectie",

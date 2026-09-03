@@ -1,7 +1,4 @@
-/*
- * Startpagina — voorlopig. Zodra scherm 1 er staat wordt dit een doorverwijzing
- * naar de actieve dataset; nu bevestigt het dat tokens en fonts geladen zijn.
- */
+/* Voorpagina — openbaar. Uitleg links, inloggen rechts. */
 
 .page {
   min-height: 100vh;
@@ -11,9 +8,9 @@
   padding: 40px 28px;
 }
 
-.card {
+.paginaKaart {
   width: 100%;
-  max-width: 620px;
+  max-width: 880px;
   background: var(--surface);
   border: 1px solid var(--rule);
   padding: 32px;
@@ -43,19 +40,58 @@
   border-bottom: 1px solid var(--rule);
 }
 
+.kolommen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 36px;
+  padding-top: 22px;
+  align-items: start;
+}
+
+/* Onder de 760px past het naast elkaar niet meer; het inlogveld gaat naar boven,
+   want daar kom je voor als je de uitleg al kent. */
+@media (max-width: 760px) {
+  .kolommen {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .inlog {
+    order: -1;
+  }
+}
+
+.lead {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+
+.lead strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------- de stappen ---- */
+
 .steps {
   list-style: none;
-  padding: 8px 0 20px;
+  padding: 18px 0 0;
 }
 
 .step {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
-  padding: 9px 0;
+  padding: 10px 0;
   border-bottom: 1px solid var(--rule-soft);
 }
 
+.step:last-child {
+  border-bottom: none;
+}
+
+/* Hetzelfde vierkantje als in de rail en de stappenbalk. */
 .stepNum {
   display: flex;
   align-items: center;
@@ -67,18 +103,43 @@
   font-size: 11px;
   color: var(--ink-3);
   flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .stepName {
+  display: block;
   font-size: 12.5px;
+  font-weight: 600;
 }
 
-.foot {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-top: 16px;
-  border-top: 1px solid var(--rule);
+.stepUitleg {
+  display: block;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+.uit {
+  margin-top: 20px;
+  padding: 12px 14px;
+  background: var(--surface-sub);
+  border: 1px solid var(--rule);
+}
+
+.uitTekst {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink-2);
+  margin-top: 6px;
+}
+
+/* --------------------------------------------------------------- inloggen ---- */
+
+.inlog {
+  border: 1px solid var(--rule);
+  padding: 18px;
+  background: var(--surface-sub);
 }
 
 /* Zichtbaar zolang .env.local ontbreekt — geen stacktrace maar een instructie. */

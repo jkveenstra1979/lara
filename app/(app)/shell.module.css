@@ -89,6 +89,41 @@
   color: var(--rule-strong);
 }
 
+/* Het nummer en de naam horen bij elkaar; de telling blijft aan de rechterkant
+   staan, want .item verdeelt zijn kinderen over de volle breedte. */
+.itemStap {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+/* Hetzelfde vierkantje als in de stappenbalk, een maatje kleiner. */
+.itemNum {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border: 1px solid var(--rule-strong);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+
+.itemNumAan {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+  font-weight: 600;
+}
+
+.itemUit .itemNum {
+  border-color: var(--rule);
+  color: var(--rule-strong);
+}
+
 .telling {
   font-family: var(--mono);
   font-size: 10.5px;

@@ -9,12 +9,29 @@ operationele gebiedsgegevens en de e-mail persoonsgegevens.
 | | |
 |---|---|
 | Specificatie V4 | `documents/LARA V4.0 Excel Airspace Import Format.pdf` — Graffica, GL/LARA/C0145/SPEC/4, 31 maart 2022 |
-| Specificatie V5 | `documents/LARA V5.0 Excel Airspace Import Format.pdf` — Sopra Steria, 31 maart 2025. **Inhoudelijk identiek aan V4**; alleen de kaft verschilt |
+| Specificatie V5 | `documents/LARA V5.0 Excel Airspace Import Format.pdf` — Sopra Steria, 31 maart 2025. **Inhoudelijk identiek aan V4** — zie hieronder |
 | Template | `documents/LARA V5 Excel Airspace Housekeeper Import Template (1).xlsx` |
 | AIXM-bron | `documents/snapshot_AeroDB_2026-09-03_LIVE.xml` — 96 MB, AIRAC 3-9-2026, 922 airspaces |
 | Timesheets | `documents/Nadere details over Timesheet in AIXM51 (aeroDB export).eml` — LVNL, 5 augustus 2026 |
 
 ---
+
+## 0 · V4 tegen V5, woord voor woord
+
+Beide PDF's dragen hetzelfde documentnummer: `GL/LARA/C0145/SPEC/4`. De
+volledige tekst is **woord voor woord identiek** — nagelopen met `pdftotext
+-layout` en een regel-voor-regel diff. Het enige verschil in de inhoud is de
+versieaanduiding: `4.0.0` wordt `5.0.0`, ook in de zin *"airspace to be imported
+into LARA 5.0.0"*.
+
+Verder verschilt alleen de kaft: uitgever (Graffica → Sopra Steria), adres,
+versienummer, datum, auteur en logo. De kolommen van de V5-template zijn kolom
+voor kolom gelijk aan wat wij schrijven; alleen de kopteksten van `Coordinates`
+en `End Date` wijken cosmetisch af.
+
+**Gevolg:** de knoppen *Exporteer LARA V4* en *Exporteer LARA V5* leveren
+hetzelfde werkboek. Het verschil zit in de bestandsnaam, zodat te zien is tegen
+welke uitgave is aangeleverd.
 
 ## 1 · Discrepanties tussen specificatie en template
 
@@ -131,7 +148,41 @@ Voorkomen in het AIXM-bestand: `ANY` 1160×, `MON` 137×, `FRI` 132×, `WED` 128
 
 **Voorlopig buiten beschouwing gelaten.** Een timesheet met `day = HOL` wordt niet uitgeschreven en verschijnt als bevinding op het exportscherm, zodat het zichtbaar is in plaats van stil te verdwijnen.
 
-**Uit te zoeken:** houdt LARA rekening met feestdagen, en zo ja, via welk veld? Zolang dat onbekend is, kan een gebied dat *alleen* op feestdagen actief is niet volledig worden overgedragen.
+**Wat het in de praktijk kost — nagelopen op de selectie van 1 oktober 2026.**
+Negen gebieden hebben een HOL-timesheet, alle negen van het type `A`
+(zweefvlieg- en klimgebieden). Bij **acht** ervan is het tijdvenster letterlijk
+gelijk aan een zaterdag- of zondagrij die wél wordt geëxporteerd:
+
+| Gebied | HOL-venster | Zelfde venster als |
+|---|---|---|
+| EHAACLIM21 · WINDE | 00:00–19:00 | SAT, SUN |
+| EHAAGLD062 · VLIJMEN | 00:00–24:00 | SAT, SUN |
+| EHAAGLD070 · DROGTEROPSLAGEN | 00:00–24:00 | SAT, SUN |
+| EHAAGLD071 · EESERGROEN | 09:00–18:00 | SAT, SUN |
+| EHAAGLD089 · EESERGROEN | 09:00–18:00 | SAT, SUN |
+| EHAAGLD090 · EESERGROEN | 09:00–18:00 | SAT, SUN |
+| EHAAGLD091 · NISTELRODE | 00:00–24:00 | SAT, SUN |
+| EHR66 | 00:00–24:00 | (`excluded=YES`, valt onder § 4.2 én de uitzonderingsregel) |
+
+Eén gebied blijft over: **EHAAGLD087 · MALDEN AREA**. Die heeft `HOL 00:00–24:00`
+naast alleen `FRI 16:00–08:00`; het feestdagvenster wordt door geen andere dag
+gedekt. Zou LARA feestdagen kennen, dan is dit het enige gebied waarvoor het
+werkelijk iets uitmaakt.
+
+**Uit te zoeken:** houdt LARA rekening met feestdagen, en zo ja, via welk veld? Zolang dat onbekend is, kan een gebied dat *alleen* op feestdagen actief is niet volledig worden overgedragen. Voor deze selectie is dat één gebied.
+
+### 4.4 Vensters over middernacht
+
+`EHAAGLD087` levert de enige rij in sheet 3 waarvan de starttijd níét vóór de
+eindtijd ligt: `FRI 16:00–08:00`. Dat is een venster dat doorloopt tot de
+zaterdagochtend, en § 2.4.2.3 verbiedt die schrijfwijze.
+
+Splitsen in `FRI 16:00–24:00` plus `SAT 00:00–08:00` ligt voor de hand, maar
+verandert wat er staat — en LARA zou het ook zelf kunnen begrijpen. Voorlopig
+schrijven we de rij ongewijzigd weg en verschijnt er een bevinding.
+
+**Testen:** importeer `EHAAGLD087` en kijk of de vrijdagrij wordt geaccepteerd.
+Zo niet, dan alsnog splitsen.
 
 ### 4.3 Eindtijd 00:00
 

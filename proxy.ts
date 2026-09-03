@@ -36,8 +36,12 @@ const PUBLIEKE_PADEN = [
  * Bewust niet met een kale `startsWith`: daarmee zou `/uitnodiging` ook
  * `/uitnodigingen` dekken, en dat is precies de beheerroute die juist
  * afgeschermd moet blijven. Het scheelt één letter.
+ *
+ * De voorpagina staat er los bij en níét in de lijst hierboven: `/` als prefix
+ * zou met `startsWith` de hele applicatie openzetten.
  */
 export function isPubliekPad(pad: string): boolean {
+  if (pad === "/") return true;
   return PUBLIEKE_PADEN.some((p) => pad === p || pad.startsWith(`${p}/`));
 }
 
@@ -85,7 +89,7 @@ export async function proxy(request: NextRequest) {
 
   if (user && pad === "/inloggen") {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/importeren";
     url.search = "";
     return NextResponse.redirect(url);
   }

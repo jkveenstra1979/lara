@@ -68,8 +68,12 @@ export type ExportGebied = {
   validTimeEnd: string | null;
   geometry: string | null;
   xmlSnippet: string | null;
+  /**
+   * De vlakken van de samengevoegde vorm — meestal één. Een gebied dat uiteen
+   * valt in losse stukken krijgt er meer, met dezelfde hoogteband; zie
+   * lib/volumeResolutie.ts.
+   */
   volumes: {
-    operationSequence: number | null;
     lowerlimit: number | null;
     lowerunit: string | null;
     upperlimit: number | null;
@@ -230,8 +234,8 @@ export async function bouwLaraWorkbook(
       std.aboveUnit,
     ]);
 
-    // Sheet 2: één rij per volume. Een gebied dat uit meerdere volumes bestaat
-    // krijgt er dus meerdere — dat is precies wat de brontool verloor.
+    // Sheet 2: één rij per vlak van de samengevoegde vorm. Dat is meestal één
+    // rij; alleen een gebied dat uiteen valt in losse stukken krijgt er meer.
     for (const volume of gebied.volumes) {
       const vorm = formatGeometryForLARA(gebied.geometry, volume.geojson);
       const onder = naarLaraHoogte(
@@ -276,11 +280,30 @@ export async function bouwLaraWorkbook(
   };
 }
 
+/**
+ * De uitgave van de specificatie waarop de export zich beroept.
+ *
+ * Inhoudelijk maakt het niets uit. De V4- (Graffica, 31 maart 2022) en de
+ * V5-uitgave (Sopra Steria, 31 maart 2025) dragen hetzelfde documentnummer
+ * `GL/LARA/C0145/SPEC/4`, en hun tekst is woord voor woord gelijk — alleen het
+ * versienummer verschilt. Ook de kolommen van de V5-template zijn gelijk aan wat
+ * wij schrijven.
+ *
+ * De keuze zit daarom alleen in de naam van het bestand — zodat je kunt laten
+ * zien tegen welke uitgave je hebt aangeleverd.
+ */
+export type LaraVersie = 4 | 5;
+
 /** `LARAV4_2608_20260806.xlsx` — AIRAC en exportdatum, zodat een download te herleiden is. */
-export function exportBestandsnaam(airac: string, extensie: string, nu = new Date()): string {
+export function exportBestandsnaam(
+  airac: string,
+  extensie: string,
+  nu = new Date(),
+  versie: LaraVersie = 4
+): string {
   const datum =
     `${nu.getFullYear()}` +
     `${String(nu.getMonth() + 1).padStart(2, "0")}` +
     `${String(nu.getDate()).padStart(2, "0")}`;
-  return `LARAV4_${airac}_${datum}.${extensie}`;
+  return `LARAV${versie}_${airac}_${datum}.${extensie}`;
 }

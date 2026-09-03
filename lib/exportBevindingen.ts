@@ -168,14 +168,16 @@ export function bepaalBevindingen(gebieden: BevindingGebied[]): Bevinding[] {
     });
   }
 
-  const meerVolumes = gebieden.filter((g) => g.volumes.length > 1);
-  if (meerVolumes.length) {
+  // Een gebied is één gebied met één vorm; valt die vorm uiteen in losse
+  // vlakken, dan zijn er meer rijen in sheet 2 nodig om hem te beschrijven.
+  const meerVlakken = gebieden.filter((g) => g.volumes.length > 1);
+  if (meerVlakken.length) {
     const totaal = gebieden.reduce((n, g) => n + g.volumes.length, 0);
     bevindingen.push({
       ernst: "let op",
-      kop: `${meerVolumes.length} ${meerVolumes.length === 1 ? "gebied bestaat" : "gebieden bestaan"} uit meerdere volumes`,
-      toelichting: `Sheet 2 krijgt daardoor ${totaal} rijen voor ${gebieden.length} gebieden. Controleer of LARA ze als losse lagen overneemt.`,
-      gebieden: noem(meerVolumes),
+      kop: `${meerVlakken.length} ${meerVlakken.length === 1 ? "gebied valt" : "gebieden vallen"} uiteen in losse vlakken`,
+      toelichting: `Eén vorm past niet in één rij, dus sheet 2 krijgt ${totaal} rijen voor ${gebieden.length} gebieden — met dezelfde hoogteband. Controleer of LARA ze als één gebied overneemt.`,
+      gebieden: noem(meerVlakken),
     });
   }
 
@@ -199,6 +201,33 @@ export function bepaalBevindingen(gebieden: BevindingGebied[]): Bevinding[] {
       gebieden: Array.from(new Set(idents)).sort(),
     });
   }
+  // Een venster dat over middernacht loopt. § 2.4.2.3 eist dat de starttijd vóór
+  // de eindtijd ligt; `16:00–08:00` voldoet daar niet aan en wordt vermoedelijk
+  // geweigerd. Splitsen in twee rijen zou de betekenis veranderen, dus dat doen
+  // we niet uit onszelf — maar stil laten passeren evenmin.
+  const overMiddernacht: { ident: string; venster: string }[] = [];
+  for (const gebied of gebieden) {
+    for (const rij of timesheetsNaarLara(extractTimesheets(gebied.xmlSnippet)).rijen) {
+      const minuten = (t: string) => {
+        const [u, m] = t.split(":").map(Number);
+        return u * 60 + m;
+      };
+      if (minuten(rij.startTime) >= minuten(rij.endTime)) {
+        overMiddernacht.push({ ident: gebied.ident, venster: `${rij.dayFrom} ${rij.startTime}–${rij.endTime}` });
+      }
+    }
+  }
+  if (overMiddernacht.length) {
+    bevindingen.push({
+      ernst: "let op",
+      kop: `${overMiddernacht.length} timesheet${overMiddernacht.length === 1 ? " loopt" : "s lopen"} over middernacht`,
+      toelichting: `De specificatie eist dat de starttijd vóór de eindtijd ligt (§ 2.4.2.3). Het gaat om: ${overMiddernacht
+        .map((o) => `${o.ident} ${o.venster}`)
+        .join(", ")}. Controleer of LARA de rij accepteert.`,
+      gebieden: Array.from(new Set(overMiddernacht.map((o) => o.ident))).sort(),
+    });
+  }
+
   if (zonderTimesheet.length) {
     bevindingen.push({
       ernst: "let op",

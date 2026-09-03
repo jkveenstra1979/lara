@@ -73,6 +73,64 @@ LARA-selectie en de nummering.
 Scheelt het opnieuw uploaden van tientallen megabytes, en is de reden dat het
 bronbestand bewaard blijft.
 
+### Een bestaande LARA-lijst overnemen
+
+Staat de lijst al in LARA, dan hoeft hij niet met de hand te worden ingeklopt:
+
+```
+npm run lara-selectie -- "documents/LARAV4_export (4).xlsx"            # proefdraai
+npm run lara-selectie -- "documents/LARAV4_export (4).xlsx" --schrijf
+```
+
+Zonder `--schrijf` wordt er niets gewijzigd; je krijgt alleen het rapport. Mét
+`--schrijf` gaat de hele selectie van de doeldataset er eerst af — de Excel-lijst
+is de waarheid. De doeldataset is dezelfde die de schermen gebruiken, of anders
+`--dataset=<id>`.
+
+Gematcht wordt op de designator uit de kolom `Area Name`, niet op de kolom
+`UUID`: die UUID is het rij-id van de dataset waaruit ooit is geëxporteerd en
+bestaat na een nieuwe import niet meer. Komt een designator twee keer voor in
+het AIXM — EHLE1 is zowel een TMA als een CTR — dan beslist `Full Name`.
+
+Eenmalig bedoeld. Daarna neemt de import de selectie zelf mee naar de volgende
+AIRAC-cyclus.
+
+### Eén gebied, één vorm
+
+AIXM beschrijft een luchtruim niet als een stapel losse volumes maar als één
+geometrie, opgebouwd uit componenten: een `BASE`, en daarna `UNION`, `SUBTR` of
+`INTERS` op volgorde van `operationSequence`. Een component hoeft geen eigen
+coördinaten te hebben — hij mag naar een ánder gebied verwijzen, en dat gebied
+mag op zijn beurt weer verwijzen.
+
+`lib/volumeResolutie.ts` lost dat op tot één vorm per gebied, met dezelfde opzet
+als `aixm-ingest/parsers/airspace.py`. Valt die vorm uiteen in losse vlakken, dan
+krijgt sheet 2 een rij per vlak — met dezelfde hoogteband, want het blijft één
+gebied.
+
+Zonder die stap kwamen vijf gebieden uit het AIXM van 1 oktober 2026 zonder
+coördinaten in de export: `EHAADLG45`, `EHAADLG47` en `EHAADLG6` omdat hun
+componenten alleen verwijzingen waren, en `EHAADLG35B` en `EHAADLG6B` omdat hun
+keten twee stappen lang is (`EHAADLG35B → EHAME2 → EHMCE`).
+
+### Meldingen
+
+In de voetbalk staat **Melding maken**. Dat wordt een issue in
+`github.com/jkveenstra1979/lara`, met de categorie als label, plus het scherm
+waar je stond en de actieve dataset. Zelfde opzet als in de andere tools.
+
+Nodig is `GITHUB_TOKEN` in `.env.local` — fine-grained, alleen `Issues: write`
+op die ene repository. Ontbreekt hij, dan verschijnt de knop niet en antwoordt
+`/api/melding` met 503; de rest van de applicatie werkt gewoon.
+
+### Grote lijsten en de URL
+
+PostgREST zet een `.in()`-filter in de query-string. Een lijst van 319 UUID's is
+ruim 11 KB en levert **414 URI Too Long** op; de grens ligt rond de 200. Dat trof
+de export, het verwijderen uit LARA en het plakken van een lijst — en pas zodra
+de LARA-lijst echt gevuld was. Alles wat over een lijst sleutels gaat loopt
+daarom via `lib/supabase/inBrokken.ts`, honderd per verzoek.
+
 ### Landsgrenzen
 
 104 van de 922 gebieden in het AIXM van 3 september 2026 volgen een landsgrens
@@ -112,15 +170,17 @@ cloud).
 ## Indeling
 
 ```
+app/page.tsx        voorpagina — openbaar: uitleg plus het inlogveld
 app/                App Router · (auth)/ inlogscherm · (app)/ schermen · fonts/
 app/(app)/Shell     rail, sessiebalk, stappenbalk, voetbalk
+app/(app)/detail    detailpaneel en kaart — gedeeld door gebieden en lara-selectie
 app/api/            upload · datasets · airspaces · lara-areas · export
 lib/                AIXM-parser en geometrie, overgenomen uit Airspace_management
 lib/airspaceVolumes volumes per gebied — nieuw, niet uit de brontool
 lib/supabase/       client (browser) · server (RSC en routes) · admin (service-role)
 lib/database.types  het schema als TypeScript
 proxy.ts            sessie verversen en toegang bewaken (heette middleware)
-scripts/            check-supabase · gebruiker-toevoegen
+scripts/            check-supabase · gebruiker-toevoegen · geoborders · lara-selectie
 styles/             tokens.css (kleuren, maten) · base.css (reset, primitieven)
 supabase/           config.toml · migrations/
 docs/               HANDOVER.md · mockup/

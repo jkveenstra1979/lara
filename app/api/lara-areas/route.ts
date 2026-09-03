@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { schrijfInBrokken } from "@/lib/supabase/inBrokken";
 
 export const runtime = "nodejs";
 
@@ -122,8 +123,12 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "airspaceIds is verplicht." }, { status: 400 });
   }
 
-  const { error } = await supabase.from("lara_areas").delete().in("airspace_id", airspaceIds);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // In brokken: `.in()` gaat over de URL, en "alles uit LARA halen" stuurt er
+  // zo een paar honderd mee. Boven ruim 200 UUID's antwoordt PostgREST met 414.
+  const { error } = await schrijfInBrokken(airspaceIds, (brok) =>
+    supabase.from("lara_areas").delete().in("airspace_id", brok)
+  );
+  if (error) return NextResponse.json({ error }, { status: 500 });
 
   return NextResponse.json({ verwijderd: airspaceIds.length });
 }

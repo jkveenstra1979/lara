@@ -38,5 +38,6 @@ export async function signIn(_prev: unknown, formData: FormData) {
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/inloggen");
+  // Terug naar de voorpagina: daar staat de uitleg én het inlogveld.
+  redirect("/");
 }

@@ -17,7 +17,36 @@ type Tab = "kaart" | "coord" | "aixm";
 const band = (v: { lowerlimit: number | null; lowerunit: string | null; upperlimit: number | null; upperunit: string | null }) =>
   `${toonHoogte(v.lowerlimit, v.lowerunit)}–${toonHoogte(v.upperlimit, v.upperunit)}`;
 
-export default function DetailPaneel({ airspaceId }: { airspaceId: string | null }) {
+/**
+ * De schil staat los van de inhoud omdat het paneel vier gedaantes heeft — leeg,
+ * ladend, mislukt en gevuld — en de sluitknop in alle vier op dezelfde plek moet
+ * staan. Eén schil betekent ook dat het paneel bij een wissel niet opnieuw wordt
+ * opgebouwd.
+ */
+function Schil({ onSluiten, children }: { onSluiten: () => void; children: React.ReactNode }) {
+  return (
+    <aside className={styles.paneel}>
+      <button
+        type="button"
+        className={styles.sluit}
+        onClick={onSluiten}
+        aria-label="Detailpaneel sluiten"
+        title="Detailpaneel sluiten"
+      >
+        ✕
+      </button>
+      {children}
+    </aside>
+  );
+}
+
+export default function DetailPaneel({
+  airspaceId,
+  onSluiten,
+}: {
+  airspaceId: string | null;
+  onSluiten: () => void;
+}) {
   // Het opgehaalde gebied draagt zijn eigen id mee. Zo hoeft er bij een wissel
   // niets te worden teruggezet in een effect — de vorige gegevens horen simpelweg
   // niet bij het huidige gebied, en dat is af te leiden in plaats van te resetten.
@@ -57,28 +86,28 @@ export default function DetailPaneel({ airspaceId }: { airspaceId: string | null
 
   if (!airspaceId) {
     return (
-      <aside className={styles.paneel}>
+      <Schil onSluiten={onSluiten}>
         <div className={styles.leeg}>
           Kies een gebied in de lijst om de kaart, de coördinaten en het originele
           AIXM-fragment te zien.
         </div>
-      </aside>
+      </Schil>
     );
   }
 
   if (laden) {
     return (
-      <aside className={styles.paneel}>
+      <Schil onSluiten={onSluiten}>
         <div className={styles.leeg}>Laden…</div>
-      </aside>
+      </Schil>
     );
   }
 
   if (fout || !gebied) {
     return (
-      <aside className={styles.paneel}>
+      <Schil onSluiten={onSluiten}>
         <div className={styles.leeg}>{fout ?? "Gebied niet gevonden."}</div>
-      </aside>
+      </Schil>
     );
   }
 
@@ -86,13 +115,14 @@ export default function DetailPaneel({ airspaceId }: { airspaceId: string | null
   const meerdere = gebied.volumes.length > 1;
 
   return (
-    <aside className={styles.paneel}>
+    <Schil onSluiten={onSluiten}>
       <div className={styles.kop}>
         <div className={styles.kopRij}>
           <span className={styles.ident}>{gebied.ident}</span>
           {gebied.inLara ? (
             <span className="badge badgeOk">
-              {gebied.laraAreaId !== null ? `LARA ${gebied.laraAreaId}` : "in LARA"}
+              <span aria-hidden="true">✓</span>
+              {gebied.laraAreaId !== null ? `ID:${gebied.laraAreaId}` : "in LARA"}
             </span>
           ) : (
             <span className="badge badgeQuiet">niet in LARA</span>
@@ -223,7 +253,7 @@ export default function DetailPaneel({ airspaceId }: { airspaceId: string | null
           XML
         </button>
       </div>
-    </aside>
+    </Schil>
   );
 }
 
