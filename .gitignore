@@ -53,3 +53,6 @@ documents/
 
 # Kopie van de MapLibre-worker; wordt bij install en build neergezet.
 /public/maplibre/
+
+# Wegwerpscripts: proeven tegen de echte snapshot, niet tegen fixtures.
+scripts/.tmp/
