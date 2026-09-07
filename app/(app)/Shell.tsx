@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { toonDatumTijd } from "@/lib/datum";
+import { signOut } from "@/app/(auth)/inloggen/actions";
 import MeldKnop from "./MeldKnop";
 import styles from "./shell.module.css";
 
@@ -54,7 +55,7 @@ export default function Shell({
           <span className={styles.wordmark}>
             LARA<em>·</em>Areas
           </span>
-          <span className={styles.tagline}>AIXM → LARA V4</span>
+          <span className={styles.tagline}>AIXM → LARA</span>
         </div>
 
         <div className={styles.groep}>
@@ -126,8 +127,17 @@ export default function Shell({
         <span className="spacer" />
 
         <div className={styles.railVoet}>
-          <span className={styles.gebruiker}>{email}</span>
-          <span className={styles.rol}>{rol === "admin" ? "beheerder" : "gebruiker"}</span>
+          <div className={styles.wie}>
+            <span className={styles.gebruiker}>{email}</span>
+            <span className={styles.rol}>{rol === "admin" ? "beheerder" : "gebruiker"}</span>
+          </div>
+          {/* Een formulier, geen onClick: uitloggen wist een cookie en dat hoort
+              op de server te gebeuren. Zo werkt de knop ook zonder JavaScript. */}
+          <form action={signOut}>
+            <button type="submit" className={styles.uitloggen}>
+              Uitloggen
+            </button>
+          </form>
         </div>
       </nav>
 

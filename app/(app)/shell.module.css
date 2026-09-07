@@ -131,8 +131,16 @@
 }
 
 .railVoet {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 12px 16px 0;
   border-top: 1px solid var(--rule);
+}
+
+/* Het adres mag inkorten, de uitlogknop niet: die houdt zijn breedte. */
+.wie {
+  min-width: 0;
 }
 
 .gebruiker {
@@ -140,6 +148,23 @@
   font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uitloggen {
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.uitloggen:hover {
+  color: var(--ink);
+  text-decoration: underline;
 }
 
 /* ----------------------------------------------------------------- main ---- */
