@@ -34,6 +34,8 @@ const eslintConfig = defineConfig([
     // Kopie van maplibre-gl uit node_modules; wordt bij install en build
     // neergezet door scripts/kopieer-maplibre-worker.mjs.
     "public/maplibre/**",
+    // Wegwerpproeven tegen de echte snapshot; staan ook niet in git.
+    "scripts/.tmp/**",
   ]),
   {
     files: OVERGENOMEN_PARSER,
