@@ -16,7 +16,7 @@ function InloggenForm() {
         <span className={styles.wordmark}>
           LARA<em>·</em>Areas
         </span>
-        <span className={styles.tagline}>AIXM → LARA V4</span>
+        <span className={styles.tagline}>AIXM → LARA</span>
       </div>
 
       <Formulier verder={verder} />

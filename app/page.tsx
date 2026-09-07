@@ -37,7 +37,7 @@ export default async function Home() {
           <span className={styles.wordmark}>
             LARA<em>·</em>Areas
           </span>
-          <span className={styles.tagline}>AIXM → LARA V4</span>
+          <span className={styles.tagline}>AIXM → LARA</span>
         </div>
 
         <div className={styles.kolommen}>

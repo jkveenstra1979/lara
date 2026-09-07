@@ -28,7 +28,7 @@ const plexMono = localFont({
 
 export const metadata: Metadata = {
   title: "LARA Areas",
-  description: "AIXM 5.1 inlezen, LARA Area IDs toekennen, LARA V4 exporteren",
+  description: "AIXM 5.1 inlezen, LARA Area IDs toekennen, LARA-importbestanden exporteren",
 };
 
 export default function RootLayout({

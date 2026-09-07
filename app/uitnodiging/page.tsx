@@ -54,7 +54,7 @@ function Formulier() {
           <span className={styles.wordmark}>
             LARA<em>·</em>Areas
           </span>
-          <span className={styles.tagline}>AIXM → LARA V4</span>
+          <span className={styles.tagline}>AIXM → LARA</span>
         </div>
         <div style={{ paddingTop: 20 }}>
           <div className={styles.error}>
@@ -72,7 +72,7 @@ function Formulier() {
           <span className={styles.wordmark}>
             LARA<em>·</em>Areas
           </span>
-          <span className={styles.tagline}>AIXM → LARA V4</span>
+          <span className={styles.tagline}>AIXM → LARA</span>
         </div>
         <div style={{ paddingTop: 20, display: "flex", flexDirection: "column", gap: 14 }}>
           <div className={styles.ok}>
@@ -93,7 +93,7 @@ function Formulier() {
         <span className={styles.wordmark}>
           LARA<em>·</em>Areas
         </span>
-        <span className={styles.tagline}>AIXM → LARA V4</span>
+        <span className={styles.tagline}>AIXM → LARA</span>
       </div>
 
       <div className={styles.fields}>
