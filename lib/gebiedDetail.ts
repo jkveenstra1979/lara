@@ -2,31 +2,53 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Feature, Geometry } from "geojson";
 import type { Database } from "./database.types";
 import { formatGeometryForLARA, type LaraGeometry } from "./laraUtils";
+import { inBrokken } from "./supabase/inBrokken";
+import { alsUuidLijst, nieuweIndex, voegComponentenToe, vulKetenAan, type GeometrieRij } from "./volumeIndex";
+import { losOp } from "./volumeResolutie";
 
 /**
  * Eén gebied met alles wat het detailpaneel toont.
  *
- * De coördinaten worden hier berekend, met dezelfde functie die de export
- * gebruikt. Dat is het hele punt van die tab: wat je op het scherm ziet is
- * letterlijk wat er in kolom `Coordinates` van sheet 2 belandt, niet een
- * benadering ervan.
+ * De volumes worden hier uitgerekend, met dezelfde functie die de export
+ * gebruikt (`losOp`) en over dezelfde rijen. Dat is het hele punt van dit
+ * paneel: wat je op het scherm ziet is letterlijk wat er in sheet 2 belandt,
+ * niet een benadering ervan.
+ *
+ * Het paneel liet eerder de componentrijen zelf zien. Dat werkt zolang een
+ * component zijn eigen coördinaten heeft, maar in het AIXM van 3 september 2026
+ * zijn álle componenten van de 31 samengestelde gebieden kale verwijzingen naar
+ * een ander gebied. Die rijen hebben geen `geojson`, dus de kaart bleef leeg en
+ * de coördinatentab zei dat er niets was — terwijl de vorm gewoon aan het eind
+ * van de keten ligt.
  */
 
+/** Eén rij zoals sheet 2 (`Area Volumes`) hem krijgt. */
 export type VolumeDetail = {
   id: string;
-  operation: string | null;
-  operationSequence: number | null;
-  geomType: string | null;
-  geometryStatus: string | null;
   lowerlimit: number | null;
   lowerunit: string | null;
   upperlimit: number | null;
   upperunit: string | null;
-  /** UUIDs van de gebieden waar dit volume uit is opgebouwd. */
-  derivedFrom: string[];
+  /** Hoeveelste vlak binnen deze hoogteband, en hoeveel het er zijn. */
+  vlak: number;
+  vlakken: number;
   geojson: Feature<Geometry> | null;
   /** De DMS-reeks zoals de export hem schrijft; null als er geen vorm is. */
   lara: LaraGeometry | null;
+};
+
+/** Waar de vorm vandaan komt: de componenten zoals ze in het AIXM staan. */
+export type ComponentDetail = {
+  id: string;
+  operation: string | null;
+  operationSequence: number | null;
+  lowerlimit: number | null;
+  lowerunit: string | null;
+  upperlimit: number | null;
+  upperunit: string | null;
+  /** Designators van de gebieden waar dit component zijn vorm van leent. */
+  bronnen: string[];
+  eigenVorm: boolean;
 };
 
 export type GebiedDetail = {
@@ -48,10 +70,11 @@ export type GebiedDetail = {
   inLara: boolean;
   laraAreaId: number | null;
   volumes: VolumeDetail[];
+  componenten: ComponentDetail[];
+  /** Wat er bij het oplossen niet, of niet helemaal, lukte. */
+  redenen: string[];
   xmlSnippet: string | null;
 };
-
-type GeometrieRij = Database["public"]["Tables"]["geometries"]["Row"];
 
 const alsStringLijst = (waarde: unknown): string[] =>
   Array.isArray(waarde) ? waarde.filter((v): v is string => typeof v === "string") : [];
@@ -78,28 +101,61 @@ export async function haalGebiedDetail(
     .eq("airspace_id", airspaceId)
     .order("operation_sequence", { ascending: true, nullsFirst: false });
 
-  const volumes: VolumeDetail[] = ((geometrieRijen ?? []) as GeometrieRij[])
-    // De samenvoegrij is geen volume; die hoort niet in de kiezer.
+  const rijen = (geometrieRijen ?? []) as GeometrieRij[];
+
+  // De keten erbij: zonder de gebieden waarnaar wordt verwezen valt er niets op
+  // te lossen voor een gebied dat zijn vorm leent.
+  const index = nieuweIndex();
+  index.perId.set(rij.id, { uuid: rij.uuid_identifier, componenten: [] });
+  if (rij.uuid_identifier) index.idPerUuid.set(rij.uuid_identifier, rij.id);
+  voegComponentenToe(index, rijen);
+  const ketenFout = await vulKetenAan(supabase, rij.dataset_id, index);
+  if (ketenFout) return { gebied: null, error: ketenFout };
+
+  const opgelost = losOp(rij.id, index);
+
+  const volumes: VolumeDetail[] = opgelost.volumes.flatMap((volume, band) =>
+    volume.vlakken.map((vlak, i) => ({
+      id: `${band}-${i}`,
+      lowerlimit: volume.band.lowerlimit,
+      lowerunit: volume.band.lowerunit,
+      upperlimit: volume.band.upperlimit,
+      upperunit: volume.band.upperunit,
+      vlak: i + 1,
+      vlakken: volume.vlakken.length,
+      geojson: vlak,
+      // De geometrietekst hangt aan het gebied, niet aan het volume; hij is
+      // nodig om een cirkel als cirkel te herkennen in plaats van als polygoon.
+      lara: formatGeometryForLARA(rij.geometry, vlak),
+    }))
+  );
+
+  // De componentrijen blijven zichtbaar, maar als herkomst: welke bewerking, uit
+  // welk gebied. De designators daarvoor staan in de index, niet in de rij zelf.
+  const idents = new Map<string, string>();
+  const bronIds = Array.from(index.perId.keys()).filter((id) => id && id !== rij.id);
+  if (bronIds.length) {
+    const { data: bronnen } = await inBrokken(bronIds, (brok) =>
+      supabase.from("airspaces").select("ident, uuid_identifier").in("id", brok)
+    );
+    for (const bron of bronnen) {
+      if (bron.uuid_identifier) idents.set(bron.uuid_identifier, bron.ident);
+    }
+  }
+
+  const componenten: ComponentDetail[] = rijen
     .filter((g) => g.operation !== "AGG")
-    .map((g) => {
-      const geojson = (g.geojson as unknown as Feature<Geometry> | null) ?? null;
-      return {
-        id: g.id,
-        operation: g.operation,
-        operationSequence: g.operation_sequence,
-        geomType: g.geom_type,
-        geometryStatus: g.geometry_status,
-        lowerlimit: g.lowerlimit,
-        lowerunit: g.lowerunit,
-        upperlimit: g.upperlimit,
-        upperunit: g.upperunit,
-        derivedFrom: alsStringLijst(g.derived_from),
-        geojson,
-        // De geometrietekst hangt aan het gebied, niet aan het volume; hij is
-        // nodig om een cirkel als cirkel te herkennen in plaats van als polygoon.
-        lara: formatGeometryForLARA(rij.geometry, geojson),
-      };
-    });
+    .map((g) => ({
+      id: g.id,
+      operation: g.operation,
+      operationSequence: g.operation_sequence,
+      lowerlimit: g.lowerlimit,
+      lowerunit: g.lowerunit,
+      upperlimit: g.upperlimit,
+      upperunit: g.upperunit,
+      bronnen: alsUuidLijst(g.derived_from).map((uuid) => idents.get(uuid) ?? uuid),
+      eigenVorm: g.geojson !== null,
+    }));
 
   let xmlSnippet: string | null = null;
   if (rij.uuid_identifier) {
@@ -134,6 +190,8 @@ export async function haalGebiedDetail(
       inLara: Boolean(lara),
       laraAreaId: lara?.lara_area_id ?? null,
       volumes,
+      componenten,
+      redenen: opgelost.redenen,
       xmlSnippet,
     },
     error: null,

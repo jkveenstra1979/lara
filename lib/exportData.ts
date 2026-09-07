@@ -2,7 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import type { Database } from "./database.types";
 import { inBrokken } from "./supabase/inBrokken";
-import { losOp, type ComponentRij, type GebiedRij, type Index } from "./volumeResolutie";
+import { nieuweIndex, voegComponentenToe, vulKetenAan, type GeometrieRij } from "./volumeIndex";
+import { losOp, type Index } from "./volumeResolutie";
 import type { ExportGebied } from "./laraWorkbook";
 import type { BevindingGebied } from "./exportBevindingen";
 import { toonHoogte } from "./gebieden";
@@ -30,95 +31,6 @@ export type ExportSet = {
   onopgelost: { ident: string; redenen: string[] }[];
 };
 
-type GeometrieRij = Database["public"]["Tables"]["geometries"]["Row"];
-
-const alsUuidLijst = (waarde: unknown): string[] =>
-  Array.isArray(waarde) ? waarde.filter((v): v is string => typeof v === "string") : [];
-
-/** Geometrierijen bij hun gebied zetten, in de vorm die de resolver leest. */
-function voegComponentenToe(index: Index, rijen: GeometrieRij[]) {
-  for (const rij of rijen) {
-    const gebied = index.perId.get(rij.airspace_id);
-    if (!gebied) continue;
-    const component: ComponentRij = {
-      operation: rij.operation,
-      operationSequence: rij.operation_sequence,
-      geojson: (rij.geojson as unknown as Feature<Geometry> | null) ?? null,
-      derivedFrom: alsUuidLijst(rij.derived_from),
-      lowerlimit: rij.lowerlimit,
-      lowerunit: rij.lowerunit,
-      upperlimit: rij.upperlimit,
-      upperunit: rij.upperunit,
-    };
-    gebied.componenten.push(component);
-  }
-}
-
-/** Alle UUID's waar de index nog niets van weet. */
-function ontbrekendeVerwijzingen(index: Index): string[] {
-  const gezocht = new Set<string>();
-  for (const gebied of index.perId.values()) {
-    for (const component of gebied.componenten) {
-      if (component.geojson) continue;
-      for (const uuid of component.derivedFrom) {
-        if (!index.idPerUuid.has(uuid)) gezocht.add(uuid);
-      }
-    }
-  }
-  return Array.from(gezocht);
-}
-
-/**
- * De keten van verwijzingen ophalen tot er niets nieuws meer bij komt.
- *
- * De grens van acht rondes is een noodrem, geen verwachting: de langste keten in
- * het AIXM van 1 oktober 2026 is twee stappen.
- */
-async function vulKetenAan(
-  supabase: SupabaseClient<Database>,
-  datasetId: string,
-  index: Index
-): Promise<string | null> {
-  for (let ronde = 0; ronde < 8; ronde += 1) {
-    const gezocht = ontbrekendeVerwijzingen(index);
-    if (!gezocht.length) return null;
-
-    const { data: bronnen, error: bronFout } = await inBrokken(gezocht, (brok) =>
-      supabase
-        .from("airspaces")
-        .select("id, uuid_identifier")
-        .eq("dataset_id", datasetId)
-        .in("uuid_identifier", brok)
-    );
-    if (bronFout) return bronFout;
-
-    const nieuweIds: string[] = [];
-    for (const bron of bronnen) {
-      if (index.perId.has(bron.id)) continue;
-      index.perId.set(bron.id, { uuid: bron.uuid_identifier, componenten: [] });
-      if (bron.uuid_identifier) index.idPerUuid.set(bron.uuid_identifier, bron.id);
-      nieuweIds.push(bron.id);
-    }
-    // Alles wat gezocht werd en niet bestaat: markeren, anders blijft de lus
-    // er elke ronde opnieuw naar vragen.
-    for (const uuid of gezocht) {
-      if (!index.idPerUuid.has(uuid)) index.idPerUuid.set(uuid, "");
-    }
-    if (!nieuweIds.length) return null;
-
-    const { data: extra, error: extraFout } = await inBrokken(nieuweIds, (brok) =>
-      supabase
-        .from("geometries")
-        .select("*")
-        .in("airspace_id", brok)
-        .order("operation_sequence", { ascending: true, nullsFirst: false })
-    );
-    if (extraFout) return extraFout;
-    voegComponentenToe(index, extra as GeometrieRij[]);
-  }
-  return null;
-}
-
 export async function haalExportSet(
   supabase: SupabaseClient<Database>,
   datasetId: string
@@ -135,7 +47,7 @@ export async function haalExportSet(
   const { data: selectie, error: selectieFout } = await supabase
     .from("lara_areas")
     // Eén regel: concatenatie sloopt de type-inferentie van supabase-js.
-    .select("airspace_id, lara_area_id, airspaces!inner(id, ident, name, type, uuid_identifier, geometry, geometry_status)")
+    .select("airspace_id, lara_area_id, airspaces!inner(id, ident, name, type, uuid_identifier, geometry, geometry_status, lowerlimit, lowerunit, upperlimit, upperunit)")
     .eq("dataset_id", datasetId);
   if (selectieFout) return { set: null, error: selectieFout.message };
 
@@ -147,6 +59,10 @@ export async function haalExportSet(
     uuid_identifier: string | null;
     geometry: string | null;
     geometry_status: string | null;
+    lowerlimit: number | null;
+    lowerunit: string | null;
+    upperlimit: number | null;
+    upperunit: string | null;
   };
   type Rij = { airspace_id: string; lara_area_id: number | null; airspaces: Genest | Genest[] | null };
 
@@ -174,7 +90,7 @@ export async function haalExportSet(
   );
   if (volumeFout) return { set: null, error: volumeFout };
 
-  const index: Index = { perId: new Map<string, GebiedRij>(), idPerUuid: new Map<string, string>() };
+  const index: Index = nieuweIndex();
   for (const rij of rijen) {
     if (!rij.gebied) continue;
     index.perId.set(rij.airspace_id, { uuid: rij.gebied.uuid_identifier, componenten: [] });
@@ -219,14 +135,29 @@ export async function haalExportSet(
     if (!g) continue;
     const snippet = g.uuid_identifier ? (snippetPerUuid.get(g.uuid_identifier) ?? null) : null;
 
-    // Eén gebied, één vorm. Valt die uiteen in losse vlakken, dan krijgt sheet 2
-    // een rij per vlak — met dezelfde hoogteband, want het blijft één gebied.
+    // Eén rij per hoogteband, en binnen een band één rij per vlak: een gebied
+    // dat uiteenvalt in losse stukken heeft er meer dan één.
     const opgelost = losOp(rij.airspace_id, index);
     if (opgelost.redenen.length) onopgelost.push({ ident: g.ident, redenen: opgelost.redenen });
 
-    const volumes = opgelost.vlakken.length
-      ? opgelost.vlakken.map((vlak) => ({ ...opgelost.band, geojson: vlak }))
-      : [{ ...opgelost.band, geojson: null }];
+    type ExportVolume = ExportGebied["volumes"][number];
+    const volumes: ExportVolume[] = opgelost.volumes.length
+      ? opgelost.volumes.flatMap((volume) =>
+          volume.vlakken.length
+            ? volume.vlakken.map((vlak) => ({ ...volume.band, geojson: vlak }))
+            : [{ ...volume.band, geojson: null as Feature<Geometry> | null }]
+        )
+      : // Niets op te lossen: toch een rij, met de hoogteband van het gebied zelf.
+        // Een leeg vak valt op; een ontbrekende rij niet.
+        [
+          {
+            lowerlimit: g.lowerlimit,
+            lowerunit: g.lowerunit,
+            upperlimit: g.upperlimit,
+            upperunit: g.upperunit,
+            geojson: null,
+          },
+        ];
 
     gebieden.push({
       laraAreaId: rij.lara_area_id,

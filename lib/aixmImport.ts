@@ -22,6 +22,7 @@ import { buildXmlSnippetIndex } from "./xmlSnippetIndex";
 import { extractGeoborders, normalizeUuid, type Geoborder } from "./geoborderExtract";
 import { collectVolumes, envelopeVerticalLimits, heeftMeerdereVolumes, type Volume } from "./airspaceVolumes";
 import { geometryStringToMultiPolygon } from "./airspaceGeometryTransitive";
+import { losOp, type ComponentRij, type GebiedRij, type Index } from "./volumeResolutie";
 import type { Database } from "./database.types";
 
 type AirspaceRij = Database["public"]["Tables"]["airspaces"]["Insert"] & { id: string };
@@ -46,6 +47,8 @@ export type ImportSamenvatting = {
   onopgelosteGrenzen: OnopgelosteGrens[];
   gebiedenMetMeerdereVolumes: number;
   volumes: number;
+  /** Gebieden die in meer dan één hoogteband uiteenvallen, met het aantal. */
+  gesplitsteHoogtebanden: { ident: string; banden: number }[];
 };
 
 export type ImportResultaat = {
@@ -118,6 +121,114 @@ function volledigeVorm(
     // beter dan niets, en de bevindingen melden de rest.
     return null;
   }
+}
+
+/* ----------------------------------------------------------- samenvoegen -- */
+
+const alsUuidLijst = (waarde: unknown): string[] =>
+  Array.isArray(waarde) ? waarde.filter((v): v is string => typeof v === "string") : [];
+
+/** De omhullende doos van een vorm, zoals de andere rijen hem opslaan. */
+function bboxVan(feature: Feature<Geometry>): [number, number, number, number] | null {
+  const punten: number[][] = [];
+  const loop = (waarde: unknown) => {
+    if (!Array.isArray(waarde)) return;
+    if (typeof waarde[0] === "number" && typeof waarde[1] === "number") {
+      punten.push(waarde as number[]);
+      return;
+    }
+    for (const deel of waarde) loop(deel);
+  };
+  loop("coordinates" in feature.geometry ? feature.geometry.coordinates : null);
+  if (!punten.length) return null;
+  const lon = punten.map((p) => p[0]);
+  const lat = punten.map((p) => p[1]);
+  return [Math.min(...lon), Math.min(...lat), Math.max(...lon), Math.max(...lat)];
+}
+
+/**
+ * De samenvoegrijen: één rij per hoogteband van het gebied als geheel.
+ *
+ * Ze worden hier neergezet met dezelfde functie die de export en het
+ * detailpaneel gebruiken (`losOp`), zodat de opgeslagen vorm per definitie
+ * dezelfde is als de uitgerekende. Eerder deed de import het met een eigen
+ * aggregator die de bogen niet interpoleerde en de keten niet volgde — daardoor
+ * kwam EHBKTMZ op 480 km² uit in plaats van 981, en kregen acht gebieden
+ * helemaal geen samenvoegrij.
+ *
+ * Alleen waar de componentrijen het antwoord niet al geven: bij meer dan één
+ * component, of bij een component dat alleen naar een ander gebied verwijst.
+ * Voor een gewone polygoon zou de rij een letterlijke kopie zijn.
+ */
+function voegSamenvoegrijenToe(
+  airspaceRijen: AirspaceRij[],
+  geometrieRijen: GeometrieRij[]
+): { gesplitst: { ident: string; banden: number }[] } {
+  const index: Index = { perId: new Map<string, GebiedRij>(), idPerUuid: new Map<string, string>() };
+  for (const rij of airspaceRijen) {
+    index.perId.set(rij.id, { uuid: rij.uuid_identifier ?? null, componenten: [] });
+    if (rij.uuid_identifier) index.idPerUuid.set(rij.uuid_identifier, rij.id);
+  }
+  for (const rij of geometrieRijen) {
+    const gebied = index.perId.get(rij.airspace_id);
+    if (!gebied) continue;
+    const component: ComponentRij = {
+      operation: rij.operation ?? null,
+      operationSequence: rij.operation_sequence ?? null,
+      geojson: (rij.geojson as unknown as Feature<Geometry> | null) ?? null,
+      derivedFrom: alsUuidLijst(rij.derived_from),
+      lowerlimit: rij.lowerlimit ?? null,
+      lowerunit: rij.lowerunit ?? null,
+      upperlimit: rij.upperlimit ?? null,
+      upperunit: rij.upperunit ?? null,
+    };
+    gebied.componenten.push(component);
+  }
+
+  const statusPerId = new Map(airspaceRijen.map((r) => [r.id, r.geometry_status ?? null]));
+  const gesplitst: { ident: string; banden: number }[] = [];
+  const nieuw: GeometrieRij[] = [];
+
+  for (const rij of airspaceRijen) {
+    const componenten = index.perId.get(rij.id)?.componenten ?? [];
+    const zelfSprekend = componenten.length === 1 && componenten[0].geojson !== null;
+    if (!componenten.length || zelfSprekend) continue;
+
+    const { volumes } = losOp(rij.id, index);
+    if (!volumes.length) continue;
+    if (volumes.length > 1) gesplitst.push({ ident: rij.ident, banden: volumes.length });
+
+    volumes.forEach((volume, i) => {
+      const mp = volume.vlakken
+        .map((v) => (v.geometry.type === "Polygon" ? [v.geometry.coordinates] : []))
+        .flat();
+      if (!mp.length) return;
+      const feature: Feature<Geometry> =
+        mp.length === 1
+          ? { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: mp[0] } }
+          : { type: "Feature", properties: {}, geometry: { type: "MultiPolygon", coordinates: mp } };
+
+      nieuw.push({
+        airspace_id: rij.id,
+        geojson: feature as unknown as GeometrieRij["geojson"],
+        bbox: bboxVan(feature) as unknown as GeometrieRij["bbox"],
+        geom_type: feature.geometry.type,
+        operation: "AGG",
+        // Vanaf 0 terugtellen: zo botst een samenvoegrij nooit met het
+        // volgnummer van een component, en blijft de stapel op volgorde.
+        operation_sequence: -i,
+        geometry_status: statusPerId.get(rij.id) ?? null,
+        lowerlimit: volume.band.lowerlimit,
+        lowerunit: volume.band.lowerunit,
+        upperlimit: volume.band.upperlimit,
+        upperunit: volume.band.upperunit,
+        derived_from: null,
+      });
+    });
+  }
+
+  geometrieRijen.push(...nieuw);
+  return { gesplitst };
 }
 
 /**
@@ -276,35 +387,18 @@ export async function bouwImport(
       raw_fragment: airspace.rawFragment ?? null,
     });
 
-    // De samengevoegde geometrie krijgt sequence 0 en operatie AGG: één rij die
-    // het gebied als geheel beschrijft, náást de volumes waaruit het bestaat.
-    const aggregatie = slice?.aggregatedGeometry;
-    if (aggregatie?.geojson) {
-      // Ook hier de volledige vorm: deze rij beschrijft het gebied als geheel en
-      // wordt geleend door gebieden die naar dit gebied verwijzen.
-      const aggVolledig = volledigeVorm(geometrieTekst, zoekGrens);
-      geometrieRijen.push({
-        airspace_id: airspaceId,
-        geojson: (aggVolledig ?? aggregatie.geojson) as unknown as GeometrieRij["geojson"],
-        bbox: (aggregatie.bbox ?? null) as GeometrieRij["bbox"],
-        geom_type: aggregatie.geomType ?? aggregatie.geojson.geometry?.type ?? null,
-        operation: "AGG",
-        operation_sequence: 0,
-        geometry_status: aggregatie.geometryStatus,
-        lowerlimit: omhullend.lowerLimit?.value ?? null,
-        lowerunit: omhullend.lowerLimit?.unit ?? null,
-        upperlimit: omhullend.upperLimit?.value ?? null,
-        upperunit: omhullend.upperLimit?.unit ?? null,
-        derived_from: null,
-      });
-    }
-
     for (const volume of volumes) {
       // De vorm uit de geometrietekst wint: die heeft de bogen en de grens.
-      const eigenTekst = slice?.geometryComponents.find(
-        (c) => c.geometryString && c.operationSequence === volume.operationSequence
-      )?.geometryString;
-      const vollediger = volledigeVorm(eigenTekst ?? geometrieTekst, zoekGrens);
+      //
+      // Alleen die van dít component. Terugvallen op de tekst van het gebied —
+      // die van het eerste component dat er één heeft — gaf een component zonder
+      // eigen coördinaten de vorm van zijn buurman. Bij één volume is dat
+      // dezelfde tekst en blijft de terugval dus staan.
+      const eigenTekst =
+        slice?.geometryComponents.find(
+          (c) => c.geometryString && c.operationSequence === volume.operationSequence
+        )?.geometryString ?? (volumes.length === 1 ? geometrieTekst : null);
+      const vollediger = volledigeVorm(eigenTekst, zoekGrens);
 
       geometrieRijen.push({
         airspace_id: airspaceId,
@@ -322,6 +416,11 @@ export async function bouwImport(
       });
     }
   });
+
+  // De samenvoegrijen kunnen er pas bij als álle componentrijen er staan: een
+  // gebied leent zijn vorm van een ander gebied, dat verderop in het bestand
+  // kan staan.
+  const { gesplitst } = voegSamenvoegrijenToe(airspaceRijen, geometrieRijen);
 
   // Alleen de fragmenten van gebieden die we ook opslaan.
   //
@@ -354,6 +453,7 @@ export async function bouwImport(
       onopgelosteGrenzen,
       gebiedenMetMeerdereVolumes,
       volumes: geometrieRijen.filter((r) => r.operation !== "AGG").length,
+      gesplitsteHoogtebanden: gesplitst,
     },
   };
 }

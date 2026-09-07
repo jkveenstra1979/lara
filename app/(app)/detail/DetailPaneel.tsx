@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import type { GebiedDetail, VolumeDetail } from "@/lib/gebiedDetail";
+import type { ComponentDetail, GebiedDetail, VolumeDetail } from "@/lib/gebiedDetail";
 import { toonHoogte } from "@/lib/gebieden";
 import styles from "./detail.module.css";
 
@@ -170,6 +170,14 @@ export default function DetailPaneel({
         </div>
       )}
 
+      {gebied.redenen.length > 0 && (
+        <div className={styles.waarschuwing}>
+          {gebied.redenen.map((reden) => (
+            <div key={reden}>{reden}</div>
+          ))}
+        </div>
+      )}
+
       {meerdere && (
         <div className={styles.volBalk}>
           <span className="sectionLabel">Volume</span>
@@ -179,17 +187,16 @@ export default function DetailPaneel({
               type="button"
               className={`${styles.volChip} ${i === volumeIndex ? styles.volChipAan : ""}`}
               onClick={() => setKeuze({ id: gebied.id, index: i })}
+              title={v.vlakken > 1 ? `Vlak ${v.vlak} van ${v.vlakken} in deze hoogteband` : undefined}
             >
-              {i + 1} · {band(v)}
+              {band(v)}
+              {v.vlakken > 1 ? ` · vlak ${v.vlak}` : ""}
             </button>
           ))}
-          <span className="spacer" />
-          <span className={styles.volBron}>
-            {volume?.operation ?? "—"}
-            {volume?.derivedFrom.length ? ` · uit ${volume.derivedFrom.join(", ")}` : " · eigen geometrie"}
-          </span>
         </div>
       )}
+
+      {gebied.componenten.length > 1 && <Herkomst componenten={gebied.componenten} />}
 
       <div className={styles.tabs}>
         {(
@@ -214,7 +221,7 @@ export default function DetailPaneel({
         {tab === "kaart" && (
           <GebiedKaart
             feature={volume?.geojson ?? null}
-            label={`${gebied.ident}${meerdere ? ` · volume ${volumeIndex + 1}` : ""}`}
+            label={`${gebied.ident}${meerdere && volume ? ` · ${band(volume)}` : ""}`}
           />
         )}
 
@@ -258,6 +265,29 @@ export default function DetailPaneel({
 }
 
 /**
+ * Waar de vorm vandaan komt.
+ *
+ * De volumes hierboven zijn het antwoord, niet de vraag: ze zijn uitgerekend uit
+ * de componenten die in het AIXM staan. Bij een samengesteld gebied is dat de
+ * enige plek waar te zien is dat EHBDRMZ niets anders is dan EHBDRMZA met
+ * EHBDRMZB erbij — de componenten zelf hebben geen coördinaat.
+ */
+function Herkomst({ componenten }: { componenten: ComponentDetail[] }) {
+  return (
+    <div className={styles.herkomst}>
+      <span className="sectionLabel">Opgebouwd uit</span>
+      {componenten.map((c) => (
+        <span key={c.id} className={styles.herkomstDeel}>
+          <span className={styles.herkomstOp}>{c.operation ?? "?"}</span>
+          {c.bronnen.length ? c.bronnen.join(", ") : c.eigenVorm ? "eigen vorm" : "geen vorm"}
+          <span className={styles.herkomstBand}>{band(c)}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/**
  * De coördinatentab toont letterlijk wat er in kolom `Coordinates` van sheet 2
  * komt te staan — dezelfde functie, dezelfde uitkomst. Daarom staat de
  * scheidingstekst erbij: het is geen weergave maar de export zelf.
@@ -292,7 +322,7 @@ function Coordinaten({ volume, meerdere }: { volume: VolumeDetail | undefined; m
       <div className={styles.coordNoot}>
         Precies de reeks die in kolom <span className="mono">Coordinates</span> van sheet{" "}
         <span className="mono">Area Volumes</span> terechtkomt
-        {meerdere ? ", voor dít volume" : ""}. Bogen zijn geïnterpoleerd; het eerste punt wordt
+        {meerdere ? ", voor deze rij" : ""}. Bogen zijn geïnterpoleerd; het eerste punt wordt
         aan het eind herhaald.
       </div>
       <ul className={styles.coordLijst}>

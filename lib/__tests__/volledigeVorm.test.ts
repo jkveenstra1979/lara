@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { Feature, Geometry } from "geojson";
 import { bouwImport, geoborderLookupUitRijen } from "../aixmImport";
+import { losOp, type ComponentRij, type GebiedRij, type Index } from "../volumeResolutie";
 
 const DATASET = "11111111-1111-1111-1111-111111111111";
 const GRENS = "a0d40d3b-2bbf-4733-9d3b-5cbc098c21c9";
@@ -160,16 +162,64 @@ describe("volledige vorm", () => {
     expect(puntenVanEersteVolume(geometrieRijen)).toBeGreaterThan(30);
   });
 
-  it("geeft ook de samenvoegrij de volledige vorm", async () => {
-    // Die rij beschrijft het gebied als geheel en wordt geleend door gebieden
-    // die ernaar verwijzen; met vijf punten zou dat lenen waardeloos zijn.
+  it("zet geen samenvoegrij neer voor één component die zichzelf beschrijft", async () => {
+    // Die rij zou een letterlijke kopie zijn. Een gebied dat hiernaar verwijst
+    // krijgt de vorm via de componentrij; daar staat hij compleet in.
     const { geometrieRijen } = await bouwImport(boogEnGrens, DATASET);
-    const agg = geometrieRijen.find((r) => r.operation === "AGG");
 
-    expect(agg, "geen samenvoegrij").toBeDefined();
-    expect(
-      telPunten((agg!.geojson as { geometry?: { coordinates?: unknown } } | null)?.geometry?.coordinates)
-    ).toBeGreaterThan(30);
+    expect(geometrieRijen.filter((r) => r.operation === "AGG")).toEqual([]);
+  });
+
+  it("levert de volledige vorm aan een gebied dat hem leent", async () => {
+    // Met vijf punten zou dat lenen waardeloos zijn: een gebied dat naar dit
+    // gebied verwijst krijgt de boog en de grens mee, niet de ankerpunten.
+    const { airspaceRijen, geometrieRijen } = await bouwImport(boogEnGrens, DATASET);
+    const bron = airspaceRijen[0];
+
+    const index: Index = {
+      perId: new Map<string, GebiedRij>([
+        [bron.id, { uuid: bron.uuid_identifier ?? null, componenten: [] }],
+        [
+          "lener",
+          {
+            uuid: "u-lener",
+            componenten: [
+              {
+                operation: "BASE",
+                operationSequence: 1,
+                geojson: null,
+                derivedFrom: [bron.uuid_identifier ?? ""],
+                lowerlimit: 0,
+                lowerunit: "FT",
+                upperlimit: 65,
+                upperunit: "FL",
+              },
+            ],
+          },
+        ],
+      ]),
+      idPerUuid: new Map<string, string>([
+        [bron.uuid_identifier ?? "", bron.id],
+        ["u-lener", "lener"],
+      ]),
+    };
+    for (const rij of geometrieRijen) {
+      const component: ComponentRij = {
+        operation: rij.operation ?? null,
+        operationSequence: rij.operation_sequence ?? null,
+        geojson: (rij.geojson as unknown as Feature<Geometry> | null) ?? null,
+        derivedFrom: [],
+        lowerlimit: rij.lowerlimit ?? null,
+        lowerunit: rij.lowerunit ?? null,
+        upperlimit: rij.upperlimit ?? null,
+        upperunit: rij.upperunit ?? null,
+      };
+      index.perId.get(rij.airspace_id)?.componenten.push(component);
+    }
+
+    const uit = losOp("lener", index);
+    expect(uit.volumes).toHaveLength(1);
+    expect(telPunten((uit.volumes[0].vlakken[0].geometry as { coordinates: unknown }).coordinates)).toBeGreaterThan(30);
   });
 
   it("laat een gewoon polygoon met rust", async () => {
