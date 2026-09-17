@@ -103,13 +103,55 @@ describe("exportBestandsnaam", () => {
 });
 
 describe("bouwLaraWorkbook", () => {
-  it("maakt drie werkbladen, geen lege", async () => {
-    // De spec zegt dat een bestand niet alle bladen hoeft te bevatten; zes lege
-    // sheets meeleveren voegt niets toe.
+  it("maakt alle negen werkbladen van de template, in dezelfde volgorde", async () => {
     const { buffer } = await bouwLaraWorkbook([gebied()]);
     const sheets = await lees(buffer);
 
-    expect(Object.keys(sheets)).toEqual(["Areas", "Area Volumes", "Area Timesheets"]);
+    expect(Object.keys(sheets)).toEqual([
+      "Areas",
+      "Area Volumes",
+      "Area Timesheets",
+      "CDR Segments",
+      "CDR Segment Timesheets",
+      "Points",
+      "Area-CDR Segment Relationships",
+      "Meta",
+      "Options",
+    ]);
+  });
+
+  it("geeft de bladen die deze tool niet vult een kopregel en verder niets", async () => {
+    const { buffer } = await bouwLaraWorkbook([gebied()]);
+    const sheets = await lees(buffer);
+
+    expect(sheets["CDR Segments"]).toHaveLength(1);
+    expect(sheets["CDR Segments"][0]).toHaveLength(25);
+    expect(sheets["CDR Segments"][0][0]).toBe("Segment ID");
+
+    expect(sheets["CDR Segment Timesheets"]).toHaveLength(1);
+    expect(sheets["CDR Segment Timesheets"][0]).toHaveLength(12);
+
+    expect(sheets["Points"]).toHaveLength(1);
+    expect(sheets["Points"][0][0]).toBe("Point ID");
+
+    expect(sheets["Area-CDR Segment Relationships"]).toHaveLength(1);
+    expect(sheets["Area-CDR Segment Relationships"][0][1]).toBe("CDR Segment ID");
+
+    expect(sheets["Meta"]).toHaveLength(1);
+    expect(sheets["Meta"][0]).toEqual(["Meta Label", "Meta Information"]);
+  });
+
+  it("vult Options wel, want dat blad is een naslaglijst", async () => {
+    // Een kopregel zonder waarden zegt niets over wat LARA toestaat.
+    const { buffer } = await bouwLaraWorkbook([gebied()]);
+    const options = (await lees(buffer))["Options"];
+
+    expect(options[0][5]).toBe("Area Type");
+    // 21 area types, de langste kolom; dus 21 rijen onder de kop.
+    expect(options).toHaveLength(22);
+    expect(options[1][5]).toBe("TSA");
+    expect(options[21][5]).toBe("UNKNOWN");
+    expect(options[1][6]).toBe("Straight Lines");
   });
 
   it("houdt de kolomindeling van de template aan", async () => {

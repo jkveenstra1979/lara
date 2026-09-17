@@ -14,6 +14,19 @@ const TEKEN: Record<Bevinding["ernst"], { teken: string; klasse: string }> = {
   "in orde": { teken: "✓", klasse: styles.tekenOk },
 };
 
+/**
+ * De bladen die het werkboek wel heeft maar deze tool niet vult: CDR-segmenten,
+ * punten en hun verbanden zitten niet in deze gegevens. Ze staan in dezelfde
+ * volgorde als in de template, tussen `Area Timesheets` en `Options`.
+ */
+const LEGE_SHEETS = [
+  "CDR Segments",
+  "CDR Segment Timesheets",
+  "Points",
+  "Area-CDR Segment Relationships",
+  "Meta",
+];
+
 export default async function ExporterenPagina() {
   const supabase = await createClient();
 
@@ -140,9 +153,23 @@ export default async function ExporterenPagina() {
                 <span>Area Timesheets</span>
                 <span>{timesheetRijen} rijen</span>
               </div>
+              {/* De bladen die deze tool niet vult. Ze staan wel in het
+                  werkboek, met hun kopregel, zodat het naast de template te
+                  leggen is. */}
+              {LEGE_SHEETS.map((naam) => (
+                <div key={naam} className={styles.sheetRij}>
+                  <span>{naam}</span>
+                  <span>alleen kopregel</span>
+                </div>
+              ))}
+              <div className={styles.sheetRij}>
+                <span>Options</span>
+                <span>naslaglijst</span>
+              </div>
             </div>
             <div className={styles.noot}>
-              Drie werkbladen, geen lege. Van de 34 kolommen in <span className="mono">Areas</span>{" "}
+              Alle negen werkbladen van de template, in dezelfde volgorde. Van de 34 kolommen in{" "}
+              <span className="mono">Areas</span>{" "}
               zijn er zes verplicht; de rest laten we leeg, zodat LARA de standaardwaarden gebruikt
               die daar zijn ingesteld.
             </div>

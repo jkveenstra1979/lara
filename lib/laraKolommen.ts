@@ -113,3 +113,107 @@ export const AREA_STANDAARDWAARDEN = {
   aboveBuffer: 0,
   aboveUnit: "ft",
 } as const;
+
+/**
+ * De zes bladen die LARA verder nog kent.
+ *
+ * Wij vullen ze niet: CDR-segmenten, punten en hun onderlinge verbanden zitten
+ * niet in deze tool, en § 2.1.1 staat toe dat een bestand ze weglaat. Ze staan
+ * er toch in, met alleen de kopregel, zodat het werkboek naast de template te
+ * leggen is — wie hem opent ziet dezelfde negen tabbladen in dezelfde volgorde,
+ * en ziet meteen dat de lege bladen leeg horen te zijn in plaats van vergeten.
+ *
+ * Koppen, volgorde en breedtes komen uit de V5-template. Die wijkt op de
+ * CDR-bladen af van wat de bestaande export schrijft; de template volgt de
+ * specificatie en de bestaande export niet, dus die krijgt hier voorrang.
+ */
+
+export const KOLOMMEN_CDR_SEGMENTS: Kolom[] = [
+  { kop: "Segment ID", breedte: 11.1, verplicht: true },
+  { kop: "UUID", breedte: 36.9 },
+  { kop: "CDR Name", breedte: 10.3, verplicht: true },
+  { kop: "FMTP Name", breedte: 11.6 },
+  { kop: "Send Over FMTP (YES/NO)", breedte: 24.4 },
+  { kop: "CDR Index", breedte: 10.0, verplicht: true },
+  { kop: "AMC", breedte: 10.6, verplicht: true },
+  { kop: "Start Point ID", breedte: 12.6, verplicht: true },
+  { kop: "End Point ID", breedte: 11.7, verplicht: true },
+  { kop: "Direction (EASTBOUND/WESTBOUND/BIDIRECTIONAL)", breedte: 49.7, verplicht: true },
+  { kop: "Start Date (dd/MM/yyyy)", breedte: 23.4, verplicht: true },
+  { kop: "End Date (dd/MM/yyyy)", breedte: 22.6, verplicht: true },
+  { kop: "AUP/UUP (YES/NO)", breedte: 18.1 },
+  { kop: "NOTAM Enabled (YES/NO)", breedte: 24.4 },
+  { kop: "NOTAM Purposes (NBOM)", breedte: 24.4 },
+  { kop: "NOTAM Code Group (4 letters)", breedte: 28.4 },
+  { kop: "NOTAM Scope (E/W/A)", breedte: 21.7 },
+  { kop: "NOTAM Traffic Types", breedte: 19.7 },
+  { kop: "Lower Alt", breedte: 9.4, verplicht: true },
+  { kop: "Lower Unit (FL/ft)", breedte: 16.7, verplicht: true },
+  { kop: "Upper Alt", breedte: 9.4, verplicht: true },
+  { kop: "Upper Unit (FL/ft)", breedte: 16.7, verplicht: true },
+  { kop: "Reference Allocation (HH:mm)", breedte: 28.6 },
+  { kop: "Daily Ref. Alloc. (YES/NO)", breedte: 23.9 },
+  { kop: "Reservation Buffer (Mins)", breedte: 24.1 },
+];
+
+export const KOLOMMEN_CDR_TIMESHEETS: Kolom[] = [
+  { kop: "Segment ID", breedte: 11.1, verplicht: true },
+  { kop: "Start Date (dd/MM/yyyy)", breedte: 23.4, verplicht: true },
+  { kop: "End Date (dd/MM/yyyy)", breedte: 22.6, verplicht: true },
+  { kop: "Start Time (HH:mm)", breedte: 18.7, verplicht: true },
+  { kop: "End Time (HH:mm)", breedte: 17.9, verplicht: true },
+  { kop: "Day From (MON/TUE/..etc)", breedte: 25.0, verplicht: true },
+  { kop: "Day Til (MON/TUE/..etc)", breedte: 22.6, verplicht: true },
+  { kop: "CDR Type (CDR_0/CDR_1/CDR_2/CDR_3/OTHER)", breedte: 43.9, verplicht: true },
+  { kop: "Lower Alt", breedte: 9.4, verplicht: true },
+  { kop: "Lower Unit (FL/ft)", breedte: 16.7, verplicht: true },
+  { kop: "Upper Alt", breedte: 9.4, verplicht: true },
+  { kop: "Upper Unit (FL/ft)", breedte: 16.7, verplicht: true },
+];
+
+export const KOLOMMEN_POINTS: Kolom[] = [
+  { kop: "Point ID", breedte: 8.0, verplicht: true },
+  { kop: "Point Name", breedte: 11.4, verplicht: true },
+  { kop: "Type", breedte: 5.4, verplicht: true },
+  { kop: "Coordinates (Degrees, minutes, seconds or Decimal Degrees)", breedte: 56.4, verplicht: true },
+];
+
+export const KOLOMMEN_AREA_CDR: Kolom[] = [
+  { kop: "Area ID", breedte: 7.4, verplicht: true },
+  { kop: "CDR Segment ID", breedte: 15.3, verplicht: true },
+  { kop: "Type (IS_CROSSING/NEARBY/OFFLOAD/EXCLUDED)", breedte: 46.9, verplicht: true },
+];
+
+export const KOLOMMEN_META: Kolom[] = [
+  { kop: "Meta Label", breedte: 10.7, verplicht: true },
+  { kop: "Meta Information", breedte: 16.7, verplicht: true },
+];
+
+/**
+ * Het blad `Options` is geen gegevensblad maar een naslaglijst: het voedt de
+ * keuzelijstjes in de template. Een lege kopregel zou daar niets betekenen, dus
+ * dit blad krijgt wel inhoud — dezelfde waarden als de template.
+ */
+export const KOLOMMEN_OPTIONS: Kolom[] = [
+  { kop: "Altitude Units", breedte: 14.0, verplicht: true },
+  { kop: "Boolean", breedte: 10.0, verplicht: true },
+  { kop: "Direction", breedte: 14.0, verplicht: true },
+  { kop: "CDR timesheet day", breedte: 18.0, verplicht: true },
+  { kop: "CDR type", breedte: 10.0, verplicht: true },
+  { kop: "Area Type", breedte: 12.0, verplicht: true },
+  { kop: "Volume Type", breedte: 14.0, verplicht: true },
+];
+
+/** Per kolom van `Options` de toegestane waarden, in de volgorde van de template. */
+export const OPTIE_WAARDEN: string[][] = [
+  ["FL", "ALT (FT)", "ALT (METRES)"],
+  ["true"],
+  ["Eastbound", "Westbound", "Bidirectional"],
+  ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN", "ANY"],
+  ["CDR0", "CDR1", "CDR2", "CDR3", "CDRN"],
+  [
+    "TSA", "TRA", "D", "RCA", "P", "RVA", "MTA", "R", "MRA", "FIR", "PIR",
+    "UIR", "ES", "CS", "CTA", "TMA", "UTA", "CTR", "OCA", "CBA", "UNKNOWN",
+  ],
+  ["Straight Lines", "Circle"],
+];

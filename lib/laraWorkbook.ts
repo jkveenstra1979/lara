@@ -5,9 +5,16 @@ import { extractTimesheets, timesheetsNaarLara, type LaraTimesheetRij } from "./
 import {
   AREA_STANDAARDWAARDEN,
   KLEUR_OPTIONEEL,
+  KOLOMMEN_AREA_CDR,
   KOLOMMEN_AREAS,
+  KOLOMMEN_CDR_SEGMENTS,
+  KOLOMMEN_CDR_TIMESHEETS,
+  KOLOMMEN_META,
+  KOLOMMEN_OPTIONS,
+  KOLOMMEN_POINTS,
   KOLOMMEN_TIMESHEETS,
   KOLOMMEN_VOLUMES,
+  OPTIE_WAARDEN,
   type Kolom,
 } from "./laraKolommen";
 
@@ -28,8 +35,10 @@ import {
  * een onbekende waarde `UNKNOWN` wordt — een TRA als `R` wegschrijven is dus
  * geen opmaakkeuze maar een fout.
  *
- * Geen lege werkbladen: § 2.1.1 zegt dat een bestand niet alle bladen hoeft te
- * bevatten, en zes lege sheets voegen niets toe.
+ * Alle negen werkbladen van de template staan erin, ook de zes die deze tool
+ * niet vult. § 2.1.1 staat weglaten toe, maar een werkboek met dezelfde
+ * tabbladen als de template is ernaast te leggen, en een leeg blad met een
+ * kopregel laat zien dat het leeg hoort te zijn in plaats van vergeten.
  */
 
 /** De 21 Area Types die LARA kent, uit de sheet `Options` van de template. */
@@ -186,6 +195,21 @@ export async function bouwLaraWorkbook(
   kopRij(wsAreas, KOLOMMEN_AREAS);
   kopRij(wsVolumes, KOLOMMEN_VOLUMES);
   kopRij(wsTimesheets, KOLOMMEN_TIMESHEETS);
+
+  // De bladen die deze tool niet vult, in de volgorde van de template. Alleen
+  // een kopregel; `Options` is een naslaglijst en krijgt wel zijn waarden.
+  kopRij(wb.addWorksheet("CDR Segments"), KOLOMMEN_CDR_SEGMENTS);
+  kopRij(wb.addWorksheet("CDR Segment Timesheets"), KOLOMMEN_CDR_TIMESHEETS);
+  kopRij(wb.addWorksheet("Points"), KOLOMMEN_POINTS);
+  kopRij(wb.addWorksheet("Area-CDR Segment Relationships"), KOLOMMEN_AREA_CDR);
+  kopRij(wb.addWorksheet("Meta"), KOLOMMEN_META);
+
+  const wsOptions = wb.addWorksheet("Options");
+  kopRij(wsOptions, KOLOMMEN_OPTIONS);
+  const meesteOpties = Math.max(...OPTIE_WAARDEN.map((kolom) => kolom.length));
+  for (let i = 0; i < meesteOpties; i += 1) {
+    wsOptions.addRow(OPTIE_WAARDEN.map((kolom) => kolom[i] ?? ""));
+  }
 
   const overgeslagenTimesheets: WorkbookResultaat["overgeslagenTimesheets"] = [];
   let volumeRijen = 0;
