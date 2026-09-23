@@ -26,8 +26,9 @@ into LARA 5.0.0"*.
 
 Verder verschilt alleen de kaft: uitgever (Graffica → Sopra Steria), adres,
 versienummer, datum, auteur en logo. De kolommen van de V5-template zijn kolom
-voor kolom gelijk aan wat wij schrijven; alleen de kopteksten van `Coordinates`
-en `End Date` wijken cosmetisch af.
+voor kolom gelijk aan wat wij schrijven; alleen de kopteksten van `Coordinates`,
+`End Date` en `Below Buffer` wijken cosmetisch af — de template heeft daar een
+langere omschrijving, een dubbele spatie en een spatie achteraan.
 
 **Gevolg:** de knoppen *Exporteer LARA V4* en *Exporteer LARA V5* leveren
 hetzelfde werkboek. Het verschil zit in de bestandsnaam, zodat te zien is tegen
@@ -171,6 +172,14 @@ werkelijk iets uitmaakt.
 
 **Uit te zoeken:** houdt LARA rekening met feestdagen, en zo ja, via welk veld? Zolang dat onbekend is, kan een gebied dat *alleen* op feestdagen actief is niet volledig worden overgedragen. Voor deze selectie is dat één gebied.
 
+### 4.3 Eindtijd 00:00
+
+De specificatie eist dat de starttijd vóór de eindtijd ligt (§ 2.4.2.3). In het AIXM-bestand staat 295× `<aixm:endTime>00:00</aixm:endTime>`, terwijl 558× `24:00` wordt gebruikt — beide notaties komen door elkaar voor voor hetzelfde: middernacht aan het eind van de dag.
+
+**Wij schrijven:** `24:00` wanneer de eindtijd `00:00` is én de starttijd niet `00:00` is, of wanneer start en eind allebei `00:00` zijn (een etmaal).
+
+**Testen:** één gebied met `00:00`–`00:00` en één met `07:00`–`00:00` importeren en het resultaat in LARA nalopen.
+
 ### 4.4 Vensters over middernacht
 
 `EHAAGLD087` levert de enige rij in sheet 3 waarvan de starttijd níét vóór de
@@ -184,25 +193,51 @@ schrijven we de rij ongewijzigd weg en verschijnt er een bevinding.
 **Testen:** importeer `EHAAGLD087` en kijk of de vrijdagrij wordt geaccepteerd.
 Zo niet, dan alsnog splitsen.
 
-### 4.3 Eindtijd 00:00
-
-De specificatie eist dat de starttijd vóór de eindtijd ligt (§ 2.4.2.3). In het AIXM-bestand staat 295× `<aixm:endTime>00:00</aixm:endTime>`, terwijl 558× `24:00` wordt gebruikt — beide notaties komen door elkaar voor voor hetzelfde: middernacht aan het eind van de dag.
-
-**Wij schrijven:** `24:00` wanneer de eindtijd `00:00` is én de starttijd niet `00:00` is, of wanneer start en eind allebei `00:00` zijn (een etmaal).
-
-**Testen:** één gebied met `00:00`–`00:00` en één met `07:00`–`00:00` importeren en het resultaat in LARA nalopen.
-
 ---
 
-## 5 · Wat we bewust weglaten
+## 5 · Wat we invullen en wat we leeg laten
 
-De specificatie merkt van de 34 kolommen in `Areas` er zes aan als verplicht: `Area ID`, `Area Name`, `Type`, `AMC`, `Start Date`, `End Date`. De rest is optioneel en krijgt bij leeglaten een standaardwaarde uit LARA's eigen `housekeeperSettings.gsdk` (§ 2.1.3). Optionele kolommen mogen zelfs helemaal ontbreken (§ 2.1.4), en niet alle werkbladen hoeven aanwezig te zijn (§ 2.1.1).
+De specificatie merkt van de 35 kolommen in `Areas` er zes aan als verplicht:
+`Area ID`, `Area Name`, `Type`, `AMC`, `Start Date`, `End Date`. De rest is
+optioneel en krijgt bij leeglaten een standaardwaarde uit LARA's eigen
+`housekeeperSettings.gsdk` (§ 2.1.3). Optionele kolommen mogen zelfs helemaal
+ontbreken (§ 2.1.4), en niet alle werkbladen hoeven aanwezig te zijn (§ 2.1.1).
 
-De brontool vult alle 34 kolommen met vaste waarden. Dat is geen eis maar een gok, en een gok overschrijft wat de beheerder in LARA zelf heeft ingesteld.
+**Wij schrijven alle 35 kolommen, en alle negen werkbladen.** Niet omdat het
+moet, maar omdat het werkboek naast het bestand moet kunnen liggen dat er nu
+draait: een export met acht kolommen is niet te vergelijken met een van
+vijfendertig, en de zes werkbladen die wij niet vullen staan er met alleen hun
+kopregel in — zo is te zien dat ze leeg *horen* te zijn in plaats van vergeten.
 
-**Wij schrijven:** de zes verplichte kolommen plus wat we uit AIXM kunnen afleiden. De rest laten we leeg, zodat LARA zijn eigen defaults gebruikt.
+Van de 35 kolommen komen er negen uit AIXM (de zes verplichte plus `Full Name`,
+`FMTP Name` en `UUID`), blijven er acht leeg, en krijgen er achttien een vaste
+waarde, overgenomen van de brontool:
 
-**Testen:** controleer na de eerste import of de weggelaten velden in LARA op de verwachte standaardwaarden staan. Zo niet, dan alsnog expliciet meegeven.
+| Kolom | Waarde | | Kolom | Waarde |
+|---|---|---|---|---|
+| `Send Over FMTP` | `YES` | | `Auto Release` | `NO` |
+| `AUP/UUP` | `YES` | | `Pending Time` | `30` |
+| `NOTAM Enabled` | `NO` | | `Release Pending` | `15` |
+| `Reference Allocation` | `03:00` | | `Before Buffer` | `0` |
+| `Daily Ref. Alloc.` | `NO` | | `After Buffer` | `0` |
+| `Applies By Default` | `YES` | | `Between Buffer` | `0` |
+| `Area Manageability Type` | `AMA` | | `Below Buffer` / `Below Unit` | `0` / `ft` |
+| `Activation Type` | `AUTOMATIC` | | `Above Buffer` / `Above Unit` | `0` / `ft` |
+
+Leeg blijven de acht NOTAM-detailkolommen: `Lower`/`Upper NOTAM Interval` en
+`-Unit`, `NOTAM Purposes`, `NOTAM Code Group`, `NOTAM Scope` en
+`NOTAM Traffic Types`.
+
+**Hier zit het risico.** Die achttien waarden zijn geen eis uit de specificatie
+maar een overname van de brontool, en een ingevulde cel overschrijft wat de
+beheerder in LARA zelf heeft ingesteld. Ze draaien aantoonbaar mee in de huidige
+praktijk, dus ze zijn niet verkeerd — maar ze zijn ook nooit bewust gekozen.
+
+**Testen:** loop de achttien waarden hierboven na met de LARA-beheerder. Is er
+één bij die niet klopt, dan is de juiste oplossing die kolom leeg laten in plaats
+van hem te corrigeren — dan geldt LARA's eigen instelling. Controleer na de
+eerste import ook of de acht NOTAM-kolommen op de verwachte standaardwaarden
+staan.
 
 ---
 
@@ -216,7 +251,7 @@ De brontool vult alle 34 kolommen met vaste waarden. Dat is geen eis maar een go
 | 4 | Gebied met `00:00`–`00:00` | wordt een etmaal, niet geweigerd |
 | 5 | Gebied met meerdere volumes | alle rijen uit sheet 2 komen als aparte volumes binnen |
 | 6 | Gebied met een niet-herkend type | komt als `UNKNOWN`, bevinding was zichtbaar |
-| 7 | Weggelaten optionele kolommen | LARA's eigen standaardwaarden gelden |
+| 7 | De achttien vaste waarden in `Areas` | kloppen met wat de beheerder wil — zie § 5 |
 | 8 | Gebied langs een landsgrens | vorm volgt de grens, geen rechte lijn — zie HANDOVER § 7 |
 
 ---

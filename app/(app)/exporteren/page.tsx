@@ -168,10 +168,10 @@ export default async function ExporterenPagina() {
               </div>
             </div>
             <div className={styles.noot}>
-              Alle negen werkbladen van de template, in dezelfde volgorde. Van de 34 kolommen in{" "}
-              <span className="mono">Areas</span>{" "}
-              zijn er zes verplicht; de rest laten we leeg, zodat LARA de standaardwaarden gebruikt
-              die daar zijn ingesteld.
+              Alle negen werkbladen van de template, in dezelfde volgorde. Van de 35 kolommen in{" "}
+              <span className="mono">Areas</span> zijn er zes verplicht; negen komen uit AIXM,
+              achttien krijgen een vaste waarde en de acht NOTAM-kolommen blijven leeg, zodat LARA
+              daar de standaardwaarden gebruikt die zijn ingesteld.
             </div>
           </div>
         </div>
